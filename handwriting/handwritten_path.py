@@ -1,20 +1,41 @@
 from handwriting.curve import Point, Curve
 
 
+class HandwrittenPathIterator:
+    """
+    this class returns pairs of points to properly draw lines on canvas
+    """
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __next__(self):
+        pass
+
+
 class HandwrittenPath:
+    """
+    Contains name for path and list of curves (objects of type Curve),
+    which represent separate sets of shifts
+    """
 
-    def __init__(self, path_name, curves: Curve = None):
-
+    def __init__(self, path_name, curves: list = None):
         if curves is None:
             self.curves = []
         else:
             self.curves = curves
 
         self.name = path_name
-
+        self.position = Point(0, 0)
+        self._iter_curve = None
 
     def __eq__(self, other):
         return all(map(lambda x, y: x == y, self.curves, other.curves))
+
+    def __len__(self):
+        return sum((len(curve) for curve in self.curves))
+
+
 
     def copy(self):
         return HandwrittenPath(str(self.name), list(self.curves))
@@ -28,9 +49,10 @@ class HandwrittenPath:
 
         # save curves in bytes with
         for curve in self.curves:
-            curve_bytes = curve.get_bytes()
-            length_bytes = (len(curve_bytes)).to_bytes(4, byteorder='big')
-            out_bytes += length_bytes + curve_bytes
+            if len(curve) != 0:
+                curve_bytes = curve.get_bytes()
+                length_bytes = (len(curve_bytes)).to_bytes(4, byteorder='big')
+                out_bytes += length_bytes + curve_bytes
 
         return out_bytes
 
@@ -51,36 +73,54 @@ class HandwrittenPath:
         new_obj.curves = curves
         return new_obj
 
-
-    def set_points(self, points):
-        self.points = points
-        self.shifts = Curve(points)
+    def set_position(self, x, y):
+        """
+        Sets absolute position of current path to iterate through it and get
+        :param x:
+        :param y:
+        """
+        self.curves[0].set_position(Point(x, y))
 
     def append_to_file(self, file_name):
         """
         Appends this instance of HandwrittenPath to file
         it can already contain other instances, so this method also adds binary size
         to read exactly one object from file in future
+
+        :param file_name: pathlib.Path object where to append current object
         """
         with file_name.open('ab+') as fout:
             path_bytes = self.get_bytes()
             fout.write(len(path_bytes).to_bytes(4, 'big'))
             fout.write(path_bytes)
 
-
     @staticmethod
-    def read_file(file_path):
-        """Reads list of HandwrittenPath instances from given file"""
+    def read_next(input_stream):
+        """
+        Reads object size and bytes of this size from input_stream
 
-        paths_list = []
-        with file_path.open('rb') as fin:
-            size_bytes = fin.read(4)
-            while size_bytes != b'':
-                path_size = int.from_bytes(size_bytes, 'big')
-                paths_list.append(HandwrittenPath.from_bytes(fin.read(path_size)))
+        :param input_stream: byte stream to read from
+        :return: bytes for current object
+        """
+        size_bytes = input_stream.read(4)
+        if size_bytes != b'':
+            read_len = int.from_bytes(size_bytes, 'big')
+            return input_stream.read(read_len)
+        else:
+            return b''
 
-                size_bytes = fin.read(4)
-                if size_bytes == b'':
-                    break
+    def new_curve(self):
+        """
+        Creates new curve, to write shifts to it
+        """
+        self.curves.append(Curve())
 
-        return paths_list
+    def append_shift(self, point: Point):
+        """
+        Appends relative shift point to last curve
+        :param point:
+        """
+        self.curves[-1].append_shift(point)
+
+    def append_absolute(self, point: Point):
+        self.curves[-1].append_absolute(point)

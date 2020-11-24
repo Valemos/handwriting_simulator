@@ -24,8 +24,5 @@ for file in input_files:
             if len(curves[-1].shifts) == 0:
                 curves.pop(len(curves) - 1)
 
-            HandwrittenPath(letter, curves).append_to_file(test_file)
-    break
-
-paths_list = HandwrittenPath.read_file(test_file)
-pass
+            out_file = (output_folder/file.name).with_suffix('.hndw')
+            HandwrittenPath(letter, curves).append_to_file(out_file)

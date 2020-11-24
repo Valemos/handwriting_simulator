@@ -7,10 +7,17 @@ class Point:
         self.x = x
         self.y = y
 
+    def __str__(self):
+        return f"({self.x}, {self.y})"
+
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
+    def __iter__(self):
+        return (self.__dict__[item] for item in self.__dict__)
+
     def get_shift(self, prev):
+        """Returns Point which was added to previous point to get this one"""
         return Point(self.x - prev.x, self.y - prev.y)
 
     def shift(self, amount):

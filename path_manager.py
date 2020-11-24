@@ -7,12 +7,12 @@ from handwriting.handwritten_path import HandwrittenPath
 def load_paths_file(file_path, is_shift = False):
     paths = {}
 
-    for let in HandwrittenPath.read_file(is_shift_file = is_shift):
-        let = shift_path_rect(let, (0, 0))
-        if let.name[0] in paths:
-            paths[let.name[0]].append(let)
+    for path in HandwrittenPath.from_file(file_path):
+        path = shift_path_rect(let, (0, 0))
+        if path.name[0] in paths:
+            paths[path.name[0]].append(path)
         else:
-            paths[let.name[0]] = [let]
+            paths[path.name[0]] = [path]
 
     return paths
 
