@@ -2,7 +2,7 @@ import pickle
 
 from handwriting.point import Point
 from handwriting.stream_savable import StreamSavable
-from handwriting.streamsavablecollection import StreamSavableCollection
+from handwriting.stream_savable_collection import StreamSavableCollection
 
 
 class CurveIterator:
@@ -37,7 +37,7 @@ class Curve(StreamSavable):
     def __init__(self, shifts=None):
         self.components = [] if shifts is None else shifts
 
-        # absolute point used to calculate next shift point for append function
+        # absolute point used to calculate next shift point for append handler
         self.last_absolute_point = self.calc_last_point()
 
     def __eq__(self, other):
@@ -104,7 +104,7 @@ class Curve(StreamSavable):
 
     def get_absolute_points(self, anchor: Point):
         """
-        This function creates set of absolute points shifted relative to first point,
+        This handler creates set of absolute points shifted relative to first point,
         first point is equal to the anchor point
 
         :param anchor:
@@ -139,7 +139,7 @@ class Curve(StreamSavable):
     @classmethod
     def read_next(cls, byte_stream):
         """
-        This function assumes, that first 4 bytes on top of file stream is length of a pickle object
+        This handler assumes, that first 4 bytes on top of file stream is length of a pickle object
         and reads N bytes from stream to deserialize shifts list and create Curve object from it
 
         loads shifts list from bytes and initializes Curve object
@@ -149,10 +149,10 @@ class Curve(StreamSavable):
 
         try:
             curve_len = byte_stream.read(4)
-            if curve_len == b'0':
+            N = int.from_bytes(curve_len, 'big')
+            if N == 0:
                 return None
             else:
-                N = int.from_bytes(curve_len, 'big')
                 return Curve(pickle.loads(byte_stream.read(N)))
 
         except pickle.UnpicklingError:
@@ -160,7 +160,14 @@ class Curve(StreamSavable):
             return None
 
     def write_to_stream(self, byte_stream):
-        """dump shifts list to bytes"""
+        """
+        dump shifts list to bytes
+        if list is empty, write 4 zero bytes to indicate empty object
+        """
+        if len(self.components) == 0:
+            byte_stream.write(bytes(4))
+            return
+
         try:
             b = pickle.dumps(self.components)
             len_b = (len(b)).to_bytes(4, byteorder='big')

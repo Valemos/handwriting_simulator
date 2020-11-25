@@ -1,7 +1,10 @@
+from abc import ABC
+
+from handwriting.savable_name import SavableName
 from handwriting.stream_savable import StreamSavable
 
 
-class StreamSavableCollection(StreamSavable):
+class StreamSavableCollection(StreamSavable, SavableName, ABC):
 
     # this is reference to a class, which also is StreamSavableCollection
     child_class: StreamSavable = None
@@ -19,7 +22,7 @@ class StreamSavableCollection(StreamSavable):
     @classmethod
     def read_next(cls, byte_stream):
         """
-        function reads name of object
+        handler reads name of object
         Than reads multiple objects from the same byte stream
 
         If N is zero, than it indicates, that object has no name, but still contains HandwrittenPath objects
@@ -31,8 +34,11 @@ class StreamSavableCollection(StreamSavable):
                 or None, if this object was empty
         """
 
-        cls.stream_read_str(byte_stream)
-        new_group = cls('')
+        name = cls.read_name(byte_stream)
+        if name is None:
+            new_obj = cls()
+        else:
+            new_obj = cls(name)
 
         # check if first Curve object is not empty
         first_path = cls.child_class.read_next(byte_stream)
@@ -44,9 +50,9 @@ class StreamSavableCollection(StreamSavable):
                     paths.append(read_component)
                 else:
                     break
-            new_group.paths = paths
+            new_obj.paths = paths
 
-        return new_group if not new_group.empty() else None
+        return new_obj if not new_obj.empty() else None
 
     def write_to_stream(self, byte_stream):
         """
@@ -66,40 +72,12 @@ class StreamSavableCollection(StreamSavable):
         :param byte_stream: stream where to write
         """
 
-        if "name" in self.__dict__:
-            self.stream_write_str(getattr(self, "name"), byte_stream)
-
+        self.write_name(byte_stream)
         for component in self.components:
             component.write_to_stream(byte_stream)
 
         # empty object
         self.child_class.empty_instance().write_to_stream(byte_stream)
-
-    @staticmethod
-    def stream_write_str(name, stream):
-        """
-        Writes name length and name itself to byte stream
-        :param name: name string with no more than 128 characters
-        :param stream: output byte stream
-        """
-        name_bytes = name[:128].encode('utf-8')
-        name_size = (len(name_bytes)).to_bytes(1, 'big')
-        stream.write(name_size)
-        stream.write(name_bytes)
-
-    @staticmethod
-    def stream_read_str(stream):
-        """
-        Function assumes, that first byte is a length N of a utf-8 string
-        than it reads N bytes, decodes it and returns resulting stream
-        :param stream: input byte stream
-        :return: string object on top of stream
-        """
-        # if byte_stream does not contain any bytes, name_len equals to 0
-        name_len = int.from_bytes(stream.read(1), 'big')
-
-        # if name_len is zero, than empty string '' will be returned
-        return (stream.read(name_len)).decode('utf-8')
 
     def empty(self):
         """

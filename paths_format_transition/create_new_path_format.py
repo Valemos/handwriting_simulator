@@ -31,4 +31,8 @@ for file in input_files:
 
             new_path_group.append_path(HandwrittenPath(letter, curves))
 
-        new_path_group.append_to_file()
+    # check if  object loads, and check if they are equal
+    # check_group = PathGroup.from_file(new_path_group.save_file)
+    #
+    # print(check_group == new_path_group)
+    # break

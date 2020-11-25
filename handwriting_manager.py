@@ -29,90 +29,113 @@ class HandwritingShiftModifyer(Frame):
 
         self.default_bg_path = 'default_bg.gif'
 
-        self.d_path_name = 'path'
         self.d_file_suffix = '.hndw'
         self.no_file_message = 'no files'
         self.can_select_message = 'select'
 
-        self.shift_mode = BooleanVar()
-        self.shift_mode.set(0)
-
         self.setup_UI()
         self.reset_canvas()
 
-    def setup_UI(self):
+    def create_events_dict(self):
+        """
+        dictionary with keys as events and handler functions as values
+        format as follows <modifier-type-first_part>, handler at the end of the chain
+        handler handler can be a tuple of Tkinter object and handler handler to bind to it
+        if bind object is not specifyed, event will be bound to root
+        """
 
-        self.parent.title("Handwriting manager")
-        self.pack(fill=BOTH, expand=1)
+        self.new_char_entry.bind('<KeyPress-Return>',)
 
-        self.columnconfigure(6, weight=1)
-        self.rowconfigure(5, weight=1)
+        return \
+            {
+                # event type
+                "ButtonPress": {
+                    # event first_part
+                    "1": None  # handler handler
+                },
+                "ButtonRelease": {
+                    "1": None
+                },
+                "Motion": {
+                    "1": None
+                },
+                "Control-Key": {
+                    "d": lambda e: self.reset_canvas()
+                },
+                "Left": lambda e: self.go_to_prev_letter(),
+                "Right": lambda e: self.go_to_next_letter(),
+                "KeyRelease": {
+                    "Return": [
+                        (self.shift_x_entry, self.handle_draw_path),
+                        (self.shift_y_entry, self.handle_draw_path),
+                        (self.file_path_entry, self.handle_enter_on_path),
+                        (self.new_char_entry, lambda e: self.handle_save_new_letter())
+                    ],
+                }
+            }
+
+    def _bind_function(self, handler, first_part, second_part=None):
+        if isinstance(handler, list):
+            for func in handler:
+                self._bind_function(func, first_part, second_part)
+
+        if isinstance(handler, tuple):
+            bind_object, handler = handler
+            bind_object.bind(f"<{first_part}>"
+                             if second_part is None else
+                             f"<{first_part}-{second_part}>",
+                             handler)
+        else:
+            self.bind(f"<{first_part}>"
+                      if second_part is None else
+                      f"<{first_part}-{second_part}>",
+                      handler)
+
+    def bind_window_events(self, events_dict):
+        for first_part, function in events_dict.items():
+            if isinstance(function, dict):
+                for second_part, func in function.items():
+                    self._bind_function(function, first_part, second_part)
+            else:
+                self._bind_function(function, first_part)
+
+    def create_grid(self):
+        """
+        Grid must be created before event binding
+        :return: grid of objects
+        """
 
         self.canvas = Canvas(self, bg="white")
         self.reset_canvas()
-        self.canvas.grid(row=5, column=0, columnspan=7,
-                         padx=5, pady=5, sticky=E + W + S + N)
-
-        self.canvas.bind('<B1-Motion>', self.draw)
-        self.canvas.bind('<Button-1>', self.draw)
-        self.canvas.bind('<ButtonRelease-1>', self.handle_mouse_release)
-
-        color_lab = Label(self, text="General: ")
-        color_lab.grid(row=0, column=0, padx=6)
-
+        general_label = Label(self, text="General: ")
+        # ?
         clear_btn = Button(self, text="Clear all", width=self.grid_width, command=lambda: self.reset_canvas())
-        clear_btn.grid(row=0, column=1, sticky=W + E)
-
-        self.parent.bind('<Control-Key-d>', lambda e: self.reset_canvas())
 
         shift_x_label = Label(self, text="Shift X: ")
-        shift_x_label.grid(row=0, column=2, padx=5)
-
         self.shift_x_field = StringVar(self)
         self.shift_x_field.set('100')
         self.shift_x_field.trace('w', self.limit_is_int_shx)
-        shift_x_entry = Entry(self, width=self.grid_width, textvariable=self.shift_x_field)
-        shift_x_entry.grid(row=0, column=3, sticky=E + W, padx=5)
+        self.shift_x_entry = Entry(self, width=self.grid_width, textvariable=self.shift_x_field)
 
         shift_y_label = Label(self, text="Shift Y: ")
-        shift_y_label.grid(row=0, column=4, padx=5)
-
         self.shift_y_field = StringVar(self)
         self.shift_y_field.set('100')
         self.shift_y_field.trace('w', self.limit_is_int_shy)
-        shift_y_entry = Entry(self, width=self.grid_width, textvariable=self.shift_y_field)
-        shift_y_entry.grid(row=0, column=5, sticky=E + W, padx=5)
-
-        shift_x_entry.bind('<Return>', lambda e: self.handle_draw_path(self.current_path))
-        shift_y_entry.bind('<Return>', lambda e: self.handle_draw_path(self.current_path))
+        self.shift_y_entry = Entry(self, width=self.grid_width, textvariable=self.shift_y_field)
 
         ch_file_path_label = Label(self, text="Choose file path: ")
-        ch_file_path_label.grid(row=1, column=0, padx=5)
+        ch_file_label = Label(self, text="Choose file letter: ")
+        open_file_btn = Button(self, text="Open file", width=self.grid_width, command=lambda: self.open_selected_file())
+        save_file_btn = Button(self, text="Save file", width=self.grid_width, command=lambda: self.save_selected_file())
 
         self.file_path_field = StringVar(self)
-        file_path_entry = Entry(self, width=self.grid_width, textvariable=self.file_path_field)
-        file_path_entry.grid(row=1, column=1, sticky=E + W, padx=5)
-
-        open_file_btn = Button(self, text="Open file", width=self.grid_width, command=lambda: self.open_selected_file())
-        open_file_btn.grid(row=1, column=2, sticky=W + E)
-        save_file_btn = Button(self, text="Save file", width=self.grid_width, command=lambda: self.save_selected_file())
-        save_file_btn.grid(row=1, column=3, sticky=W + E)
-        draw_shift_chk = Checkbutton(self, text="Shift mode", width=self.grid_width, variable=self.shift_mode,
-                                     onvalue=1, offvalue=0)
-        draw_shift_chk.grid(row=1, column=4, sticky=W + E)
-
-        ch_file_label = Label(self, text="Choose file letter: ")
-        ch_file_label.grid(row=2, column=0, padx=5)
-
-        self.cur_path_name_field = StringVar(self)
-        self.cur_path_name_field.set(self.no_file_message)
-        self.ch_letter_menu = OptionMenu(self, self.cur_path_name_field, value=None)
-        self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, None)
-        self.ch_letter_menu.grid(row=2, column=1, sticky=W)
-        self.ch_letter_menu.config(width=self.grid_width)
+        self.file_path_entry = Entry(self, width=self.grid_width, textvariable=self.file_path_field)
 
         # enter press opens files
-        file_path_entry.bind('<Return>', self.handle_enter_on_path)
+        self.cur_path_name_field = StringVar(self)
+        self.cur_path_name_field.set(self.no_file_message)
+        self.ch_letter_menu = OptionMenu(self, self.cur_path_name_field, value=None, width=self.grid_width)
+        self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, None)
 
         control_btn_frame = Frame(self)
         control_btn_frame.grid(row=2, column=2, sticky=W + E)
@@ -123,38 +146,72 @@ class HandwritingShiftModifyer(Frame):
         control_btn_prev.pack(side=LEFT)
         control_btn_next.pack(side=RIGHT)
 
-        self.parent.bind('<Left>', lambda e: self.go_to_prev_letter())
-        self.parent.bind('<Right>', lambda e: self.go_to_next_letter())
-
+        # ?
         draw_curve_btn = Button(self, text="Draw path", command=lambda: self.handle_draw_path(self.current_path))
-        draw_curve_btn.grid(row=2, column=3, sticky=W + E)
 
         edit_btn = Button(self, text="Edit path", width=self.grid_width, command=lambda: self.handle_edit_letter())
-        edit_btn.grid(row=2, column=4, sticky=W + E)
-
         del_btn = Button(self, text="Delete path", width=self.grid_width, command=lambda: self.handle_delete_letter())
-        del_btn.grid(row=2, column=5, sticky=W + E)
-
         create_letter_label = Label(self, text="Create new path: ")
-        create_letter_label.grid(row=4, column=0, padx=5)
-
         new_char_frame = Frame(self)
-        new_char_frame.grid(row=4, column=1, sticky=W + E, padx=5)
-
         new_char_label = Label(new_char_frame, text='New name:', width=round(self.grid_width / 2))
         new_char_label.pack(side=LEFT)
 
         self.new_char_field = StringVar(self)
-        new_char_entry = Entry(new_char_frame, width=10, textvariable=self.new_char_field)
-        new_char_entry.pack(side=RIGHT)
-        new_char_entry.bind('<KeyPress-Return>', lambda e: self.handle_save_new_letter())
+        self.new_char_entry = Entry(new_char_frame, width=10, textvariable=self.new_char_field)
+        self.new_char_entry.pack(side=RIGHT)
 
         save_letter_btn = Button(self, text="Save and continue", width=self.grid_width,
                                  command=lambda e: self.handle_save_new_letter())
+        detect_letter_btn = Button(self, text="Detect current letter", width=self.grid_width,
+                                   command=lambda e: self.handle_detect_letter())
+
+        # list of rows with widget objects, representing grid of corresponding widgets
+        widgets_table = [
+            [],
+            [],
+            [],
+            [],
+            [],
+        ]
+        self.canvas.grid(row=5, column=0, columnspan=7,
+                         padx=5, pady=5, sticky=E + W + S + N)
+        general_label.grid(row=0, column=0, padx=6)
+        clear_btn.grid(row=0, column=1, sticky=W + E)
+        shift_x_label.grid(row=0, column=2, padx=5)
+        shift_x_entry.grid(row=0, column=3, sticky=EW, padx=5)
+        shift_y_label.grid(row=0, column=4, padx=5)
+        shift_y_entry.grid(row=0, column=5, sticky=EW, padx=5)
+        ch_file_path_label.grid(row=1, column=0, padx=5)
+        file_path_entry.grid(row=1, column=1, sticky=EW, padx=5)
+        open_file_btn.grid(row=1, column=2, sticky=EW)
+        save_file_btn.grid(row=1, column=3, sticky=EW)
+        ch_file_label.grid(row=2, column=0, padx=5)
+        self.ch_letter_menu.grid(row=2, column=1, sticky=W)
+        draw_curve_btn.grid(row=2, column=3, sticky=W + E)
+        edit_btn.grid(row=2, column=4, sticky=W + E)
+        del_btn.grid(row=2, column=5, sticky=W + E)
+        create_letter_label.grid(row=4, column=0, padx=5)
+        new_char_frame.grid(row=4, column=1, sticky=W + E, padx=5)
         save_letter_btn.grid(row=4, column=2, sticky=W + E)
-        save_letter_btn = Button(self, text="Detect current letter", width=self.grid_width,
-                                 command=lambda e: self.handle_detect_letter())
-        save_letter_btn.grid(row=4, column=3, sticky=W + E)
+        detect_letter_btn.grid(row=4, column=3, sticky=W + E)
+
+        return widgets_table
+
+    def put_grid_objects_on_window(self, grid):
+        pass
+
+    def setup_UI(self):
+
+        self.parent.title("Handwriting manager")
+        self.pack(fill=BOTH, expand=1)
+
+        grid = self.create_grid()
+
+        # configure space for grid
+        self.columnconfigure(6, weight=1)
+        self.rowconfigure(5, weight=1)
+
+        self.bind_window_events(self.create_events_dict())
 
     def reset_canvas(self):
 
@@ -222,9 +279,10 @@ class HandwritingShiftModifyer(Frame):
         self.current_path.name = name
         self.all_paths_dict[name] = copy.deepcopy(self.current_path)
         self.refresh_letter_choices(self.all_paths_dict)
-        if clear: self.reset_canvas()
+        if clear:
+            self.reset_canvas()
 
-    def handle_draw_path(self, path):
+    def handle_draw_path(self, event):
         pass
 
     def handle_edit_letter(self):
@@ -363,7 +421,7 @@ class HandwritingShiftModifyer(Frame):
         self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, list(choices_dict.keys()), default)
 
     def handle_file_path(self, path_str=None):
-        # todo: rewrite this function
+        # todo: rewrite this handler
         if path_str is None:
             if len(self.file_path_field.get()) == 0:
                 if is_shift_file:

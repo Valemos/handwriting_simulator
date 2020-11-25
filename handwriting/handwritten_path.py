@@ -1,7 +1,7 @@
 import io
 
 from handwriting.curve import Point, Curve
-from handwriting.streamsavablecollection import StreamSavableCollection
+from handwriting.stream_savable_collection import StreamSavableCollection
 
 
 class HandwrittenPathIterator:
@@ -73,7 +73,7 @@ class HandwrittenPath(StreamSavableCollection):
 
     def new_curve(self, first_point):
         """
-        This function must be called after user click
+        This handler must be called after user click
         Creates new curve, to write shifts to it
         Also if this curve is not first, calculates shift relative to end of last curve
         :param first_point: next absolute point to start Curve with
@@ -104,3 +104,10 @@ class HandwrittenPath(StreamSavableCollection):
     @staticmethod
     def empty_instance():
         return HandwrittenPath('', [])
+
+    @staticmethod
+    def read_name(stream):
+        return HandwrittenPath.stream_read_str(stream)
+
+    def write_name(self, stream):
+        HandwrittenPath.stream_write_str(self.name, stream)

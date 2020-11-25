@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-from handwriting.streamsavablecollection import StreamSavableCollection
+from handwriting.stream_savable_collection import StreamSavableCollection
 from handwriting.handwritten_path import HandwrittenPath
 
 class PathGroup(StreamSavableCollection):
@@ -32,6 +32,13 @@ class PathGroup(StreamSavableCollection):
         with self.save_file.open('wb+') as fout:
             self.stream_write_str(self.name, fout)
 
+    @staticmethod
+    def read_name(stream):
+        return PathGroup.stream_read_str(stream)
+
+    def write_name(self, stream):
+        PathGroup.stream_write_str(self.name, stream)
+
     def append_path(self, another_path: HandwrittenPath):
         """
         must call initialize_save_file before append operations
@@ -42,13 +49,20 @@ class PathGroup(StreamSavableCollection):
         with self.save_file.open('ab+') as fout:
             another_path.write_to_stream(fout)
 
-    def append_to_file(self, file_path=None):
+    def save_to_file(self, file_mode='ab+', file_path=None):
         """
-        Appends bytes from write_to_stream to save file, or, if provided, to file_path
+        Appends bytes from write_to_stream to save file, or, if provided, to file_path with given file write mode
 
+        :param file_mode: file write mode, one of 'a' or 'w' for open() method
         :param file_path: path, where to save current object,
                             if it is None object will be saved to default save_path
         """
+        file_path = file_path if file_path is not None else self.save_file
+
+        with file_path.open(file_mode) as fout:
+            self.write_to_stream(fout)
+
+    def append_to_file(self, file_path=None):
         file_path = file_path if file_path is not None else self.save_file
 
         with file_path.open('ab+') as fout:
@@ -85,3 +99,8 @@ class PathGroup(StreamSavableCollection):
     @staticmethod
     def empty_instance():
         return PathGroup('', [])
+
+    @staticmethod
+    def from_file(file_path):
+        with file_path.open('rb') as fin:
+            return PathGroup.read_next(fin)
