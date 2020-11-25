@@ -9,9 +9,8 @@ class StreamSavableCollection(StreamSavable, SavableName, ABC):
     # this is reference to a class, which also is StreamSavableCollection
     child_class: StreamSavable = None
 
-    def __init__(self, list_object=None):
-        super().__init__()
-        if self.child_class is None or list_object is None:
+    def __init__(self, list_object):
+        if self.child_class is None:
             raise NotImplementedError
 
         self.components = list_object
@@ -43,14 +42,14 @@ class StreamSavableCollection(StreamSavable, SavableName, ABC):
         # check if first Curve object is not empty
         first_path = cls.child_class.read_next(byte_stream)
         if first_path is not None:
-            paths = [first_path]
+            components = [first_path]
             while True:
                 read_component = cls.child_class.read_next(byte_stream)
                 if read_component is not None:
-                    paths.append(read_component)
+                    components.append(read_component)
                 else:
                     break
-            new_obj.paths = paths
+            new_obj.components = components
 
         return new_obj if not new_obj.empty() else None
 

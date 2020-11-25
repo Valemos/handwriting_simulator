@@ -43,21 +43,13 @@ class HandwritingShiftModifyer(Frame):
         handler handler can be a tuple of Tkinter object and handler handler to bind to it
         if bind object is not specifyed, event will be bound to root
         """
-
-        self.new_char_entry.bind('<KeyPress-Return>',)
-
         return \
             {
                 # event type
-                "ButtonPress": {
-                    # event first_part
-                    "1": None  # handler handler
-                },
-                "ButtonRelease": {
-                    "1": None
-                },
-                "Motion": {
-                    "1": None
+                "B1": {
+                    "ButtonPress": (self.canvas, self.handle_mouse_press),
+                    "ButtonRelease": (self.canvas, self.handle_mouse_release),
+                    "Motion": (self.canvas, self.handle_motion_draw)
                 },
                 "Control-Key": {
                     "d": lambda e: self.reset_canvas()
@@ -75,9 +67,15 @@ class HandwritingShiftModifyer(Frame):
             }
 
     def _bind_function(self, handler, first_part, second_part=None):
+        if isinstance(handler, dict):
+            for second_part, func in handler.items():
+                self._bind_function(func, first_part, second_part)
+            return
+
         if isinstance(handler, list):
             for func in handler:
                 self._bind_function(func, first_part, second_part)
+            return
 
         if isinstance(handler, tuple):
             bind_object, handler = handler
@@ -93,11 +91,7 @@ class HandwritingShiftModifyer(Frame):
 
     def bind_window_events(self, events_dict):
         for first_part, function in events_dict.items():
-            if isinstance(function, dict):
-                for second_part, func in function.items():
-                    self._bind_function(function, first_part, second_part)
-            else:
-                self._bind_function(function, first_part)
+            self._bind_function(function, first_part)
 
     def create_grid(self, root):
         """
@@ -134,7 +128,8 @@ class HandwritingShiftModifyer(Frame):
         # enter press opens files
         self.cur_path_name_field = StringVar(self)
         self.cur_path_name_field.set(self.no_file_message)
-        self.ch_letter_menu = OptionMenu(root, self.cur_path_name_field, value=None, width=self.grid_width)
+        self.ch_letter_menu = OptionMenu(root, self.cur_path_name_field, value=None)
+        self.ch_letter_menu.configure(width=self.grid_width)
         self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, None)
 
         control_btn_frame = Frame(root)
@@ -173,8 +168,8 @@ class HandwritingShiftModifyer(Frame):
             [ch_file_lab,    self.file_entry,        open_file_btn,  save_file_btn],
             [ch_let_lab,     self.ch_letter_menu,    None,           draw_curve_btn,         edit_btn,       del_btn],
             [],
-            [create_let_lab, new_char_frame,         save_let_btn,   detect_let_btn]
-            [(self.canvas, {"columnspan": 6, "sticky": NSEW})],
+            [create_let_lab, new_char_frame,         save_let_btn,   detect_let_btn],
+            [(self.canvas, {"columnspan": 6, "sticky": NSEW})]
         ]
         # if argument not specifyed explicitly, take it from global arguments
         global_arguments = {"padx": 5, "pady": 5, "sticky": EW}
@@ -184,6 +179,9 @@ class HandwritingShiftModifyer(Frame):
 
         return widgets_table_rows, global_arguments
 
+    def dummy(self, event):
+        print(event)
+
     @staticmethod
     def put_objects_on_grid(grid_rows, arguments):
         for row in range(len(grid_rows)):
@@ -192,7 +190,7 @@ class HandwritingShiftModifyer(Frame):
                     continue
                 elif isinstance(grid_rows[row][col], tuple):
                     obj, args = grid_rows[row][col]
-                    for arg_name, value in arguments:
+                    for arg_name, value in arguments.items():
                         if arg_name not in args:
                             args[arg_name] = value
 
@@ -206,6 +204,7 @@ class HandwritingShiftModifyer(Frame):
         self.pack(fill=BOTH, expand=1)
 
         grid, arguments = self.create_grid(self)
+        self.put_objects_on_grid(grid, arguments)
 
         self.bind_window_events(self.create_events_dict())
 
@@ -233,11 +232,18 @@ class HandwritingShiftModifyer(Frame):
         Sets current draw path to given path and draws it on canvas
         :param path: path to set, if Path is None, sets default empty path as current
         """
-        self.current_path = path if path is not None else HandwrittenPath('', [])
-        self.draw_current_path(path.get_position())
+        self.current_path = HandwrittenPath('', []) if path is None else path
+        self.draw_current_path(self.current_path.get_position())
 
-    def draw(self, event):
-        self.current_path.append_absolute(Point(event.x, event.y))
+    def handle_mouse_press(self, event):
+        print("press", event.state)
+
+    def handle_motion_draw(self, event):
+        # self.current_path.append_absolute(Point(event.x, event.y))
+        print('move', event.state)
+
+    def handle_mouse_release(self, event):
+        print('release', event.state)
 
     def draw_line(self, point1: Point, point2: Point):
         self.canvas.create_line(point1.x, point1.y, point2.x, point2.y, fill=self.brush_color, width=self.brush_size)
@@ -252,9 +258,6 @@ class HandwritingShiftModifyer(Frame):
         self.reset_canvas()
         for p1, p2 in self.current_path:
             self.draw_line(p1, p2)
-
-    def handle_mouse_release(self, event):
-        pass
 
     def handle_detect_letter(self):
         pass
@@ -371,92 +374,107 @@ class HandwritingShiftModifyer(Frame):
             label_var.set(default)
 
     def open_selected_file(self, path=None):
-        if path is None:
-            file_path = self.handle_file_path(is_shift_file=self.shift_mode.get())
-        else:
-            file_path = path
-
-        if self.shift_mode.get() and not str(file_path.with_suffix('')).endswith(self.d_shift_suffix):
-            file_path = self.handle_file_path(str(file_path.with_suffix('')) + self.d_shift_suffix + self.d_file_suffix)
-            self.file_path_field.set(str(file_path))
-
-        if file_path.exists():
-            temp_paths = HandwrittenPath.from_file(self.shift_mode.get())
-            temp_dict = {}
-            for path in temp_paths:
-                path.name = self.make_unique_name(path.name, temp_dict)
-                temp_dict[path.name] = path
-
-            self.all_paths_dict = temp_dict
-            self.refresh_letter_choices(temp_dict)
-            if len(self.all_paths_dict) > 0:
-                self.handle_letter_chosen(self.cur_path_name_field, list(self.all_paths_dict.keys())[0])
-                self.new_char_field.set(list(self.all_paths_dict.values())[0].name)
-            else:
-                self.new_char_field.set('')
+        # if path is None:
+        #     file_path = self.handle_file_path(is_shift_file=self.shift_mode.get())
+        # else:
+        #     file_path = path
+        #
+        # if self.shift_mode.get() and not str(file_path.with_suffix('')).endswith(self.d_shift_suffix):
+        #     file_path = self.handle_file_path(str(file_path.with_suffix('')) + self.d_shift_suffix + self.d_file_suffix)
+        #     self.file_path_field.set(str(file_path))
+        #
+        # if file_path.exists():
+        #     temp_paths = HandwrittenPath.from_file(self.shift_mode.get())
+        #     temp_dict = {}
+        #     for path in temp_paths:
+        #         path.name = self.make_unique_name(path.name, temp_dict)
+        #         temp_dict[path.name] = path
+        #
+        #     self.all_paths_dict = temp_dict
+        #     self.refresh_letter_choices(temp_dict)
+        #     if len(self.all_paths_dict) > 0:
+        #         self.handle_letter_chosen(self.cur_path_name_field, list(self.all_paths_dict.keys())[0])
+        #         self.new_char_field.set(list(self.all_paths_dict.values())[0].name)
+        #     else:
+        #         self.new_char_field.set('')
+        return None
 
     def save_selected_file(self):
-        file_path = self.handle_file_path(is_shift_file=self.shift_mode.get())
+        file_path = self.handle_file_path()
         if file_path.exists():
             with file_path.open('wb') as save_file:
                 for letter in self.all_paths_dict.values():
                     save_file.write(letter.get_bytes(self.shift_mode.get()))
                     save_file.write((0).to_bytes(4, 'big'))
 
-    def make_unique_name(self, name, dct):
-        if len(name) == 0:
-            name = self.d_path_name
-        count = 1
-        new_name = name
-        while new_name in dct:
-            new_name = name + str(count)
-            count += 1
-        return new_name
-
     def refresh_letter_choices(self, choices_dict, default=None):
         self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, list(choices_dict.keys()), default)
 
     def handle_file_path(self, path_str=None):
         # todo: rewrite this handler
-        if path_str is None:
-            if len(self.file_path_field.get()) == 0:
-                if is_shift_file:
-                    file_path = Path(self.d_file_name + self.d_shift_suffix + self.d_file_suffix)
-                else:
-                    file_path = Path(self.d_file_name + self.d_file_suffix)
-                self.file_path_field.set(str(file_path))
-            else:
-                file_path = Path(self.file_path_field.get())
-        else:
-            file_path = Path(path_str)
+        # if path_str is None:
+        #     if len(self.file_path_field.get()) == 0:
+        #         if is_shift_file:
+        #             file_path = Path(self.d_file_name + self.d_shift_suffix + self.d_file_suffix)
+        #         else:
+        #             file_path = Path(self.d_file_name + self.d_file_suffix)
+        #         self.file_path_field.set(str(file_path))
+        #     else:
+        #         file_path = Path(self.file_path_field.get())
+        # else:
+        #     file_path = Path(path_str)
+        #
+        # if file_path.is_dir():
+        #     if is_shift_file:
+        #         def_file_path = file_path / (self.d_file_name + self.d_file_suffix)
+        #     else:
+        #         def_file_path = file_path / (self.d_file_name + self.d_shift_suffix + self.d_file_suffix)
+        #
+        #     if def_file_path.exists() and path_str is None:
+        #         messagebox.showinfo('Handwriting manager',
+        #                             'Found default file. Changing input path to\n' + str(def_file_path))
+        #
+        #     file_path = def_file_path
+        #
+        # if is_shift_file:
+        #     if file_path.suffixes != [self.d_shift_suffix, self.d_file_suffix]:
+        #         file_path = file_path.with_suffix(self.d_shift_suffix + self.d_file_suffix)
+        #         if path_str is None: self.file_path_field.set(str(file_path))
+        # else:
+        #     file_path = file_path.with_suffix('').with_suffix(self.d_file_suffix)
+        #
+        # if not file_path.exists():
+        #     file_path.parent.mkdir(parents=True, exist_ok=True)
+        #     file_path.touch()
+        #     messagebox.showinfo('Handwriting manager', 'Successfully created file\n' + str(file_path))
+        #
+        # self.file_path_field.set(str(file_path))
+        # return file_path
+        return Path(path_str)
 
-        if file_path.is_dir():
-            if is_shift_file:
-                def_file_path = file_path / (self.d_file_name + self.d_file_suffix)
-            else:
-                def_file_path = file_path / (self.d_file_name + self.d_shift_suffix + self.d_file_suffix)
+    def __init__(self, parent):
+        Frame.__init__(self, parent)
+        self.parent = parent
 
-            if def_file_path.exists() and path_str is None:
-                messagebox.showinfo('Handwriting manager',
-                                    'Found default file. Changing input path to\n' + str(def_file_path))
+        self.grid_width = 15
 
-            file_path = def_file_path
+        self.brush_size = 5
+        self.brush_color = "black"
 
-        if is_shift_file:
-            if file_path.suffixes != [self.d_shift_suffix, self.d_file_suffix]:
-                file_path = file_path.with_suffix(self.d_shift_suffix + self.d_file_suffix)
-                if path_str is None: self.file_path_field.set(str(file_path))
-        else:
-            file_path = file_path.with_suffix('').with_suffix(self.d_file_suffix)
+        # dictionary of
 
-        if not file_path.exists():
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.touch()
-            messagebox.showinfo('Handwriting manager', 'Successfully created file\n' + str(file_path))
+        self.background_image = None
 
-        self.file_path_field.set(str(file_path))
-        return file_path
+        self.default_bg_path = 'default_bg.gif'
 
+        self.d_file_suffix = '.hndw'
+        self.no_file_message = 'no files'
+        self.can_select_message = 'select'
+
+        self.setup_UI()
+        self.reset_canvas()
+        # set default current path
+        self.set_current_path()
 
 def main():
     root = Tk()

@@ -17,9 +17,12 @@ class PathGroup(StreamSavableCollection):
 
         self.name = name
 
+    def __str__(self):
+        return f"{self.name}: {len(self.components)}"
+
     def initialize_save_path(self, save_file=None):
         if save_file is None:
-            self.save_file = Path(self.save_file_format.format('paths' if self.name == '' else self.name))
+            self.save_file = Path(self.save_file_format.format('components' if self.name == '' else self.name))
         else:
             self.save_file = save_file
 
@@ -42,7 +45,7 @@ class PathGroup(StreamSavableCollection):
     def append_path(self, another_path: HandwrittenPath):
         """
         must call initialize_save_file before append operations
-        appends path to group and to paths file
+        appends path to group and to components file
         """
 
         self.components.append(another_path)
@@ -55,7 +58,7 @@ class PathGroup(StreamSavableCollection):
 
         :param file_mode: file write mode, one of 'a' or 'w' for open() method
         :param file_path: path, where to save current object,
-                            if it is None object will be saved to default save_path
+                            if it is None object will be saved to default _save_path
         """
         file_path = file_path if file_path is not None else self.save_file
 

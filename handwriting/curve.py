@@ -49,6 +49,12 @@ class Curve(StreamSavable):
     def __iter__(self):
         return CurveIterator(self)
 
+    def get_position(self):
+        if len(self.components) > 0:
+            return self.components[0]
+        else:
+            return Point(0, 0)
+
     def set_position(self, point: Point):
         """
         Zero position in shift list plays a role of shift relative to (0, 0) position

@@ -10,7 +10,7 @@ from memory_limiter import limit_memory
 class TextWriter:
     
     def __init__(self):
-        self.line_paths = [HandwrittenPath('', [])] # this contains paths for every line
+        self.line_paths = [HandwrittenPath('', [])] # this contains components for every line
     
     # text work functions
     def reset(self):

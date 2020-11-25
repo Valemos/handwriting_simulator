@@ -4,6 +4,7 @@ from handwriting.handwritten_path import HandwrittenPath
 from handwriting.curve import Curve
 from handwriting.path_group import PathGroup
 from handwriting.point import Point
+from handwriting.signature_dictionary import SignatureDictionary
 
 input_files = list(Path("../letters/").glob("*.dat"))
 
@@ -11,6 +12,8 @@ output_folder = Path("../my_letters")
 
 # test_file = Path('test.dat')
 # test_file.open('w+').close()
+
+new_dictionary = SignatureDictionary("anton_rude_signature")
 
 for file in input_files:
     with file.open('rb') as fin:
@@ -30,9 +33,7 @@ for file in input_files:
                 curves.pop(len(curves) - 1)
 
             new_path_group.append_path(HandwrittenPath(letter, curves))
+        new_dictionary.append(new_path_group)
 
-    # check if  object loads, and check if they are equal
-    # check_group = PathGroup.from_file(new_path_group.save_file)
-    #
-    # print(check_group == new_path_group)
-    # break
+# new_dictionary.save_file()
+# print(new_dictionary == SignatureDictionary.from_file(Path("anton_rude_signature.dict")))

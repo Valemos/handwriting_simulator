@@ -69,7 +69,10 @@ class HandwrittenPath(StreamSavableCollection):
         self.components[0].set_position(point)
 
     def get_position(self):
-        return self.components[0].shifts[0]
+        if len(self.components) > 0:
+            return self.components[0].get_position()
+        else:
+            return Point(0, 0)
 
     def new_curve(self, first_point):
         """
