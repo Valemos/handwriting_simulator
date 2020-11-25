@@ -10,8 +10,8 @@ class CurveIterator:
     def __init__(self, obj):
         self.obj = obj
         self.first_point = obj.shifts[0] if len(obj.shifts) > 0 else None
-        self._cur_point = self.first_point
-        self._shifts_iter = iter([Point(0, 0)] + obj.shifts[1:])
+        self._cur_point = Point(0, 0)
+        self._shifts_iter = iter(obj.shifts)
 
     def __next__(self):
         if self.first_point is None:
@@ -34,7 +34,7 @@ class Curve:
         self.shifts = [] if shifts is None else shifts
 
         # absolute point used to calculate next shift point for append function
-        self._last_absolute_point = self.calc_last_point()
+        self.last_absolute_point = self.calc_last_point()
 
     def __eq__(self, other):
         return all(map(lambda x, y: x == y, self.shifts, other.shifts))
@@ -51,6 +51,14 @@ class Curve:
         :param point: point to set position to
         """
         self.shifts[0] = point
+
+    def shift(self, amount: Point):
+        """
+        Shifts curve's first point with some displacement
+
+        :param amount: shift amount
+        """
+        self.shifts[0] = self.shifts[0].shift(amount)
 
     @staticmethod
     def convert_abs_to_shifts(abs_points: list):
@@ -69,32 +77,48 @@ class Curve:
     def get_bytes(self):
         """dump self.shifts list to bytes"""
         try:
-            return pickle.dumps(self.shifts)
+            b = pickle.dumps(self.shifts)
+            len_b = (len(b)).to_bytes(4, byteorder='big')
+            return len_b + b
         except pickle.PicklingError:
             print("error saving curve to bytes")
             return bytes()
 
     @staticmethod
-    def from_bytes(curve_bytes):
-        """loads shifts list from bytes and initializes Curve object"""
+    def read_next(byte_stream):
+        """
+        This function assumes, that first 4 bytes on top of file stream is length of an object
+        and reads N bytes from stream to deserialize shifts list and create Curve object from it
+
+        loads shifts list from bytes and initializes Curve object
+        :param byte_stream: stream of bytes to read from
+        :return: new Curve object or None, if object was empty or not corrupted.
+        """
+
         try:
-            return Curve(pickle.loads(curve_bytes))
+            curve_len = byte_stream.read(4)
+            if curve_len == b'0':
+                return None
+            else:
+                N = int.from_bytes(curve_len, 'big')
+                return Curve(pickle.loads(byte_stream.read(N)))
+
         except pickle.UnpicklingError:
             print("error loading curve from bytes")
             return None
 
     def append_shift(self, point: Point):
         self.shifts.append(point)
-        self._last_absolute_point.shift(point)
+        self.last_absolute_point.shift(point)
 
     def append_absolute(self, point: Point):
         """
-        Method appends shift relative to previous absolute point recorded in self._last_absolute_point
-        value of self._last_absolute_point is changed for the next append operation
+        Method appends shift relative to previous absolute point recorded in self.last_absolute_point
+        value of self.last_absolute_point is changed for the next append operation
         """
 
-        self.shifts.append(point.get_shift(self._last_absolute_point))
-        self._last_absolute_point = point
+        self.shifts.append(point.get_shift(self.last_absolute_point))
+        self.last_absolute_point = point
 
     @staticmethod
     def from_absolute(abs_points: list):

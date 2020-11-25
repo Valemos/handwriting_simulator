@@ -4,6 +4,8 @@ from pathlib import Path
 import copy
 
 from handwriting.handwritten_path import HandwrittenPath
+from handwriting.path_group import PathGroup
+from handwriting.point import Point
 
 
 class HandwritingShiftModifyer(Frame):
@@ -17,27 +19,28 @@ class HandwritingShiftModifyer(Frame):
         self.brush_size = 5
         self.brush_color = "black"
 
-        self.last_draw_point = (None, None)
-        self.cur_path = HandwrittenPath('')
-        self.all_paths_dict = {}
+        # set default current path
+        self.set_current_path()
+
+        # dict of PathGroup objects
+        self.all_path_groups = {}
 
         self.background_image = None
 
         self.default_bg_path = 'default_bg.gif'
-        self.d_file_name = 'path_data'
+
         self.d_path_name = 'path'
         self.d_file_suffix = '.hndw'
-        self.d_shift_suffix = '.shift'
-        self.no_file_message = 'no options'
+        self.no_file_message = 'no files'
         self.can_select_message = 'select'
 
         self.shift_mode = BooleanVar()
         self.shift_mode.set(0)
 
-        self.setUI()
+        self.setup_UI()
         self.reset_canvas()
 
-    def setUI(self):
+    def setup_UI(self):
 
         self.parent.title("Handwriting manager")
         self.pack(fill=BOTH, expand=1)
@@ -80,8 +83,8 @@ class HandwritingShiftModifyer(Frame):
         shift_y_entry = Entry(self, width=self.grid_width, textvariable=self.shift_y_field)
         shift_y_entry.grid(row=0, column=5, sticky=E + W, padx=5)
 
-        shift_x_entry.bind('<Return>', lambda e: self.handle_draw_path(self.cur_path))
-        shift_y_entry.bind('<Return>', lambda e: self.handle_draw_path(self.cur_path))
+        shift_x_entry.bind('<Return>', lambda e: self.handle_draw_path(self.current_path))
+        shift_y_entry.bind('<Return>', lambda e: self.handle_draw_path(self.current_path))
 
         ch_file_path_label = Label(self, text="Choose file path: ")
         ch_file_path_label.grid(row=1, column=0, padx=5)
@@ -123,7 +126,7 @@ class HandwritingShiftModifyer(Frame):
         self.parent.bind('<Left>', lambda e: self.go_to_prev_letter())
         self.parent.bind('<Right>', lambda e: self.go_to_next_letter())
 
-        draw_curve_btn = Button(self, text="Draw path", command=lambda: self.handle_draw_path(self.cur_path))
+        draw_curve_btn = Button(self, text="Draw path", command=lambda: self.handle_draw_path(self.current_path))
         draw_curve_btn.grid(row=2, column=3, sticky=W + E)
 
         edit_btn = Button(self, text="Edit path", width=self.grid_width, command=lambda: self.handle_edit_letter())
@@ -154,38 +157,51 @@ class HandwritingShiftModifyer(Frame):
         save_letter_btn.grid(row=4, column=3, sticky=W + E)
 
     def reset_canvas(self):
-        self.last_draw_point = (None, None)
-        self.cur_path = HandwrittenPath('', [])
+
         self.canvas.delete("all")
         if self.background_image is not None:
             self.canvas.create_image((int(self.background_image.width() / 2), int(self.background_image.height() / 2)),
                                      image=self.background_image)
         else:
-            if Path(self.default_bg_path).exists():
-                self.background_image = PhotoImage(file=str(Path(self.default_bg_path).resolve()))
-                self.canvas.create_image(
-                    (int(self.background_image.width() / 2), int(self.background_image.height() / 2)),
-                    image=self.background_image)
+            self.update_background_image()
+
+    def update_background_image(self):
+        if Path(self.default_bg_path).exists():
+            self.background_image = PhotoImage(file=str(Path(self.default_bg_path).resolve()))
+            self.canvas.create_image(
+                (
+                    int(self.background_image.width() / 2),
+                    int(self.background_image.height() / 2)
+                ),
+                image=self.background_image)
+
+    def set_current_path(self, path: HandwrittenPath = None):
+        """
+        Sets current draw path to given path and draws it on canvas
+        :param path: path to set, if Path is None, sets default empty path as current
+        """
+        self.current_path = path if path is not None else HandwrittenPath('', [])
+        self.draw_current_path(path.get_position())
 
     def draw(self, event):
-        self.cur_path.append_abs(*self.draw_last_line(event.x, event.y))
+        self.current_path.append_absolute(Point(event.x, event.y))
 
-    def draw_last_line(self, x, y):
-        self.canvas.create_line(*self.last_draw_point, x, y, fill=self.brush_color, width=self.brush_size)
-        return x, y
+    def draw_line(self, point1: Point, point2: Point):
+        self.canvas.create_line(point1.x, point1.y, point2.x, point2.y, fill=self.brush_color, width=self.brush_size)
 
-    def draw_path(self, path, anchor_point):
-        pass
+    def draw_current_path(self, anchor_point=None):
+        """
+        Draws current path lines using HandwrittenPath iterator
 
-    def draw_curve(self, curve, anchor_point):
+        :param anchor_point: if anchor_point is not None,
+                            updates absolute position of current path
+        """
         self.reset_canvas()
-        for point in points:
-            self.draw_last_line(point)
-
-        self.cur_path.set_points(points)
+        for p1, p2 in self.current_path:
+            self.draw_line(p1, p2)
 
     def handle_mouse_release(self, event):
-        self.cur_path.cre
+        pass
 
     def handle_detect_letter(self):
         pass
@@ -197,30 +213,23 @@ class HandwritingShiftModifyer(Frame):
             self.handle_draw_path(self.all_paths_dict[choice])
 
     def handle_enter_on_path(self, event):
-        file_path = self.handle_file_path(is_shift_file=self.shift_mode.get())
-        if file_path.suffixes[0] == self.d_shift_suffix:
-            self.open_selected_file(path=file_path)
-            self.shift_mode.set(1)
-        else:
-            self.open_selected_file(path=file_path)
-            self.shift_mode.set(0)
+        file_path = self.handle_file_path()
+        new_group = PathGroup.read_next(file_path)
+        self.all_path_groups[new_group.name] = new_group
 
     def handle_save_new_letter(self, clear=True):
         name = self.make_unique_name(self.new_char_field.get(), self.all_paths_dict)
-        self.cur_path.name = name
-        self.all_paths_dict[name] = copy.deepcopy(self.cur_path)
+        self.current_path.name = name
+        self.all_paths_dict[name] = copy.deepcopy(self.current_path)
         self.refresh_letter_choices(self.all_paths_dict)
         if clear: self.reset_canvas()
 
     def handle_draw_path(self, path):
-        if self.shift_mode.get():
-            self.draw_curve(path.get_path((int(self.shift_x_field.get()), int(self.shift_y_field.get()))))
-        else:
-            self.draw_curve(path.get_path())
+        draw
 
     def handle_edit_letter(self):
         if self.cur_path_name_field.get() in self.all_paths_dict:
-            self.all_paths_dict[self.cur_path_name_field.get()] = copy.deepcopy(self.cur_path)
+            self.all_paths_dict[self.cur_path_name_field.get()] = copy.deepcopy(self.current_path)
         else:
             self.handle_save_new_letter(clear=False)
 
@@ -354,6 +363,7 @@ class HandwritingShiftModifyer(Frame):
         self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, list(choices_dict.keys()), default)
 
     def handle_file_path(self, path_str=None):
+        # todo: rewrite this function
         if path_str is None:
             if len(self.file_path_field.get()) == 0:
                 if is_shift_file:
