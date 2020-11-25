@@ -52,9 +52,9 @@ class TestPath(unittest.TestCase):
         next(it)
         next(it)
 
-        last_point = path.curves[0].calc_last_point()
-        prev_point = last_point.shift(path.curves[1].shifts[0])
-        cur_point = prev_point.shift(path.curves[1].shifts[1])
+        last_point = path.components[0].calc_last_point()
+        prev_point = last_point.shift(path.components[1].shifts[0])
+        cur_point = prev_point.shift(path.components[1].shifts[1])
 
         self.assertEqual(next(it), (prev_point, cur_point))
 

@@ -1,6 +1,9 @@
 import pickle
 
 from handwriting.point import Point
+from handwriting.stream_savable import StreamSavable
+from handwriting.streamsavablecollection import StreamSavableCollection
+
 
 class CurveIterator:
     """
@@ -24,41 +27,42 @@ class CurveIterator:
         return self._cur_point
 
 
-class Curve:
+class Curve(StreamSavable):
     """
     Contains set of shifts for handwritten path
     with each point stored as shift relative to previous point
     """
-    def __init__(self, shifts=None):
 
-        self.shifts = [] if shifts is None else shifts
+
+    def __init__(self, shifts=None):
+        self.components = [] if shifts is None else shifts
 
         # absolute point used to calculate next shift point for append function
         self.last_absolute_point = self.calc_last_point()
 
     def __eq__(self, other):
-        return all(map(lambda x, y: x == y, self.shifts, other.shifts))
+        return all(map(lambda x, y: x == y, self.components, other.components))
 
     def __len__(self):
-        return len(self.shifts)
+        return len(self.components)
 
     def __iter__(self):
         return CurveIterator(self)
 
     def set_position(self, point: Point):
         """
-        Zero position plays a role of shift relative to (0, 0) position
+        Zero position in shift list plays a role of shift relative to (0, 0) position
         :param point: point to set position to
         """
-        self.shifts[0] = point
+        self.components[0] = point
 
     def shift(self, amount: Point):
         """
-        Shifts curve's first point with some displacement
+        components curve's first point with some displacement
 
         :param amount: shift amount
         """
-        self.shifts[0] = self.shifts[0].shift(amount)
+        self.components[0] = self.components[0].shift(amount)
 
     @staticmethod
     def convert_abs_to_shifts(abs_points: list):
@@ -74,20 +78,68 @@ class Curve:
             prev_point = point
         return new_points
 
-    def get_bytes(self):
-        """dump self.shifts list to bytes"""
-        try:
-            b = pickle.dumps(self.shifts)
-            len_b = (len(b)).to_bytes(4, byteorder='big')
-            return len_b + b
-        except pickle.PicklingError:
-            print("error saving curve to bytes")
-            return bytes()
+    def append_shift(self, point: Point):
+        self.components.append(point)
+        self.last_absolute_point.shift(point)
+
+    def append_absolute(self, point: Point):
+        """
+        Method appends shift relative to previous absolute point recorded in self.last_absolute_point
+        value of self.last_absolute_point is changed for the next append operation
+        """
+
+        self.components.append(point.get_shift(self.last_absolute_point))
+        self.last_absolute_point = point
 
     @staticmethod
-    def read_next(byte_stream):
+    def from_absolute(abs_points: list):
+        """Returns instance of Curve for absolute values of points"""
+        if len(abs_points) == 0:
+            return Curve()
+
+        new_curve = Curve()
+        for p in abs_points:
+            new_curve.append_absolute(p)
+        return new_curve
+
+    def get_absolute_points(self, anchor: Point):
         """
-        This function assumes, that first 4 bytes on top of file stream is length of an object
+        This function creates set of absolute points shifted relative to first point,
+        first point is equal to the anchor point
+
+        :param anchor:
+        :return: iterator in list of absolute points relative to anchor point
+        """
+        new_points = [anchor]
+        for shift_amount in self.components[1:]:
+            new_points.append(new_points[-1].shift(shift_amount))
+        return new_points
+
+    def calc_last_point(self):
+        """
+        Method calculates absolute position of last point using self.shifts list.
+        First point in self.shifts is considered as a starting point.
+        Each next point is a relative shift from previous point.
+
+        If shifts list is empty, resulting point is considered to be (0, 0)
+
+        :returns absolute value for last point in shifts list
+        """
+        if len(self.components) == 0:
+            return Point(0, 0)
+
+        point = self.components[0]
+        for i in range(1, len(self.components)):
+            point = point.shift(self.components[i])
+        return point
+
+
+    # object saving
+
+    @classmethod
+    def read_next(cls, byte_stream):
+        """
+        This function assumes, that first 4 bytes on top of file stream is length of a pickle object
         and reads N bytes from stream to deserialize shifts list and create Curve object from it
 
         loads shifts list from bytes and initializes Curve object
@@ -107,57 +159,16 @@ class Curve:
             print("error loading curve from bytes")
             return None
 
-    def append_shift(self, point: Point):
-        self.shifts.append(point)
-        self.last_absolute_point.shift(point)
-
-    def append_absolute(self, point: Point):
-        """
-        Method appends shift relative to previous absolute point recorded in self.last_absolute_point
-        value of self.last_absolute_point is changed for the next append operation
-        """
-
-        self.shifts.append(point.get_shift(self.last_absolute_point))
-        self.last_absolute_point = point
+    def write_to_stream(self, byte_stream):
+        """dump shifts list to bytes"""
+        try:
+            b = pickle.dumps(self.components)
+            len_b = (len(b)).to_bytes(4, byteorder='big')
+            byte_stream.write(len_b)
+            byte_stream.write(b)
+        except pickle.PicklingError:
+            print("error saving curve to bytes")
 
     @staticmethod
-    def from_absolute(abs_points: list):
-        """Returns instance of Curve for absolute values of points"""
-        if len(abs_points) == 0:
-            return Curve()
-
-        new_curve = Curve()
-        for p in abs_points:
-            new_curve.append_absolute(p)
-        return new_curve
-
-    def get_absolute_iterator(self, anchor: Point):
-        """
-        This function creates set of absolute points shifted relative to first point,
-        first point is equal to the anchor point
-
-        :param anchor:
-        :return: iterator in list of absolute points relative to anchor point
-        """
-        new_points = [anchor]
-        for shift_amount in self.shifts[1:]:
-            new_points.append(new_points[-1].shift(shift_amount))
-        return new_points
-
-    def calc_last_point(self):
-        """
-        Method calculates absolute position of last point using self.shifts list.
-        First point in self.shifts is considered as a starting point.
-        Each next point is a relative shift from previous point.
-
-        If shifts list is empty, resulting point is considered to be (0, 0)
-
-        :returns absolute value for last point in shifts list
-        """
-        if len(self.shifts) == 0:
-            return Point(0, 0)
-
-        point = self.shifts[0]
-        for i in range(1, len(self.shifts)):
-            point = point.shift(self.shifts[i])
-        return point
+    def empty_instance():
+        return Curve()

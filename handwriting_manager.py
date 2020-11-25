@@ -225,7 +225,7 @@ class HandwritingShiftModifyer(Frame):
         if clear: self.reset_canvas()
 
     def handle_draw_path(self, path):
-        draw
+        pass
 
     def handle_edit_letter(self):
         if self.cur_path_name_field.get() in self.all_paths_dict:
