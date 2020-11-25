@@ -12,9 +12,9 @@ class CurveIterator:
     """
     def __init__(self, obj):
         self.obj = obj
-        self.first_point = obj.shifts[0] if len(obj.shifts) > 0 else None
+        self.first_point = obj.components[0] if len(obj.components) > 0 else None
         self._cur_point = Point(0, 0)
-        self._shifts_iter = iter(obj.shifts)
+        self._shifts_iter = iter(obj.components)
 
     def __next__(self):
         if self.first_point is None:

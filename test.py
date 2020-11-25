@@ -1,3 +1,4 @@
+import io
 import os
 import unittest
 from pathlib import Path
@@ -5,7 +6,7 @@ import copy
 
 from handwriting.path_group import PathGroup
 from handwriting.handwritten_path import HandwrittenPath, Curve, Point
-
+from handwriting.signature_dictionary import SignatureDictionary
 
 abs_points = [Point(*elem) for elem in [(15, 15), (20, 15), (30, 40), (80, 60)]]
 test_path = HandwrittenPath('hello',
@@ -39,7 +40,7 @@ class TestConvertCurve(unittest.TestCase):
         a = copy.deepcopy(test_path)
         bt = a.get_bytes()
 
-        b = HandwrittenPath.read_next(bt)
+        b = HandwrittenPath.read_next(io.BytesIO(bt))
         self.assertEqual(a, b)
 
 
@@ -53,8 +54,8 @@ class TestPath(unittest.TestCase):
         next(it)
 
         last_point = path.components[0].calc_last_point()
-        prev_point = last_point.shift(path.components[1].shifts[0])
-        cur_point = prev_point.shift(path.components[1].shifts[1])
+        prev_point = last_point.shift(path.components[1].components[0])
+        cur_point = prev_point.shift(path.components[1].components[1])
 
         self.assertEqual(next(it), (prev_point, cur_point))
 
@@ -84,6 +85,15 @@ class TestShiftPosition(unittest.TestCase):
             self.assertEqual(abs_point, abs_points[index])
             index += 1
 
+class TestDictionary(unittest.TestCase):
+    
+    def test_dict_iterator(self):
+        obj = SignatureDictionary.from_file(Path('paths_format_transition/anton_test.dict'))
+        it = obj.get_iterator()
+
+        for i in range(100):
+            it.prev()
+            print(it.cur_group, it.cur_variant)
 
 if __name__ == '__main__':
     unittest.main()

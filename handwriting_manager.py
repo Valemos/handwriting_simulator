@@ -1,4 +1,4 @@
-from tkinter import *
+import tkinter as tk
 from tkinter import messagebox
 from pathlib import Path
 import copy
@@ -6,12 +6,17 @@ import copy
 from handwriting.handwritten_path import HandwrittenPath
 from handwriting.path_group import PathGroup
 from handwriting.point import Point
+from handwriting.signature_dictionary import SignatureDictionary
 
 
-class HandwritingShiftModifyer(Frame):
+class HandwritingShiftModifyer(tk.Frame):
+    default_bg_path = 'default_bg.gif'
+
+    no_choices_message = 'no options'
+    can_select_message = 'select'
 
     def __init__(self, parent):
-        Frame.__init__(self, parent)
+        tk.Frame.__init__(self, parent)
         self.parent = parent
 
         self.grid_width = 15
@@ -19,19 +24,11 @@ class HandwritingShiftModifyer(Frame):
         self.brush_size = 5
         self.brush_color = "black"
 
-        # set default current path
-        self.set_current_path()
-
-        # dict of PathGroup objects
-        self.all_path_groups = {}
+        # dictionary of path groups
+        self.paths_dictionary: SignatureDictionary = None
+        self.paths_iterator = None
 
         self.background_image = None
-
-        self.default_bg_path = 'default_bg.gif'
-
-        self.d_file_suffix = '.hndw'
-        self.no_file_message = 'no files'
-        self.can_select_message = 'select'
 
         self.setup_UI()
         self.reset_canvas()
@@ -99,88 +96,88 @@ class HandwritingShiftModifyer(Frame):
         :return: grid of objects
         """
 
-        self.canvas = Canvas(root, bg="white")
+        self.canvas = tk.Canvas(root, bg="white")
         self.reset_canvas()
-        general_lab = Label(root, text="General: ")
+        general_lab = tk.Label(root, text="General: ")
         # ?
-        clear_btn = Button(root, text="Clear all", width=self.grid_width, command=lambda: self.reset_canvas())
+        clear_btn = tk.Button(root, text="Clear all", width=self.grid_width, command=lambda: self.reset_canvas())
 
-        shift_x_label = Label(root, text="Shift X: ")
-        self.shift_x_field = StringVar(root)
+        shift_x_label = tk.Label(root, text="Shift X: ")
+        self.shift_x_field = tk.StringVar(root)
         self.shift_x_field.set('100')
         self.shift_x_field.trace('w', self.limit_is_int_shx)
-        self.shift_x_entry = Entry(root, width=self.grid_width, textvariable=self.shift_x_field)
+        self.shift_x_entry = tk.Entry(root, width=self.grid_width, textvariable=self.shift_x_field)
 
-        shift_y_label = Label(root, text="Shift Y: ")
-        self.shift_y_field = StringVar(root)
+        shift_y_label = tk.Label(root, text="Shift Y: ")
+        self.shift_y_field = tk.StringVar(root)
         self.shift_y_field.set('100')
         self.shift_y_field.trace('w', self.limit_is_int_shy)
-        self.shift_y_entry = Entry(root, width=self.grid_width, textvariable=self.shift_y_field)
+        self.shift_y_entry = tk.Entry(root, width=self.grid_width, textvariable=self.shift_y_field)
 
-        ch_file_lab = Label(root, text="Choose file path: ")
-        ch_let_lab = Label(root, text="Choose file letter: ")
-        open_file_btn = Button(root, text="Open file", width=self.grid_width, command=lambda: self.open_selected_file())
-        save_file_btn = Button(root, text="Save file", width=self.grid_width, command=lambda: self.save_selected_file())
+        ch_file_lab = tk.Label(root, text="Choose file path: ")
+        ch_let_lab = tk.Label(root, text="Choose file letter: ")
+        open_file_btn = tk.Button(root, text="Open file", width=self.grid_width,
+                                  command=lambda: self.open_selected_file())
+        save_file_btn = tk.Button(root, text="Save file", width=self.grid_width,
+                                  command=lambda: self.save_selected_file())
 
-        self.file_path_field = StringVar(self)
-        self.file_entry = Entry(root, width=self.grid_width, textvariable=self.file_path_field)
+        self.file_path_field = tk.StringVar(self)
+        self.file_entry = tk.Entry(root, width=self.grid_width, textvariable=self.file_path_field)
 
         # enter press opens files
-        self.cur_path_name_field = StringVar(self)
-        self.cur_path_name_field.set(self.no_file_message)
-        self.ch_letter_menu = OptionMenu(root, self.cur_path_name_field, value=None)
+        self.cur_path_name_field = tk.StringVar(self)
+        self.cur_path_name_field.set(self.no_choices_message)
+        self.ch_letter_menu = tk.OptionMenu(root, self.cur_path_name_field, value=None)
         self.ch_letter_menu.configure(width=self.grid_width)
         self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, None)
 
-        control_btn_frame = Frame(root)
-        control_btn_frame.grid(row=2, column=2, sticky=W + E)
-        control_btn_prev = Button(control_btn_frame, text='<<', command=lambda: self.go_to_prev_letter(),
-                                  width=round(self.grid_width / 2))
-        control_btn_next = Button(control_btn_frame, text='>>', command=lambda: self.go_to_next_letter(),
-                                  width=round(self.grid_width / 2))
-        control_btn_prev.pack(side=LEFT)
-        control_btn_next.pack(side=RIGHT)
+        control_btn_frame = tk.Frame(root)
+        control_btn_frame.grid(row=2, column=2, sticky=tk.EW)
+        control_btn_prev = tk.Button(control_btn_frame, text='<<', command=lambda: self.go_to_prev_letter(),
+                                     width=round(self.grid_width / 2))
+        control_btn_next = tk.Button(control_btn_frame, text='>>', command=lambda: self.go_to_next_letter(),
+                                     width=round(self.grid_width / 2))
+        control_btn_prev.pack(side=tk.LEFT)
+        control_btn_next.pack(side=tk.RIGHT)
 
         # ?
-        draw_curve_btn = Button(root, text="Draw path", command=lambda: self.handle_draw_path(self.current_path))
+        draw_curve_btn = tk.Button(root, text="Draw path", command=self.handle_draw_path)
 
-        edit_btn = Button(root, text="Edit path", width=self.grid_width, command=lambda: self.handle_edit_letter())
-        del_btn = Button(root, text="Delete path", width=self.grid_width, command=lambda: self.handle_delete_letter())
-        create_let_lab = Label(root, text="Create new path: ")
-        new_char_frame = Frame(root)
-        new_char_label = Label(new_char_frame, text='New name:', width=round(self.grid_width / 2))
-        new_char_label.pack(side=LEFT)
+        edit_btn = tk.Button(root, text="Edit path", width=self.grid_width, command=self.handle_edit_letter)
+        del_btn = tk.Button(root, text="Delete path", width=self.grid_width, command=self.handle_delete_letter)
+        create_let_lab = tk.Label(root, text="Create new path: ")
+        new_char_frame = tk.Frame(root)
+        new_char_label = tk.Label(new_char_frame, text='New name:', width=round(self.grid_width / 2))
+        new_char_label.pack(side=tk.LEFT)
 
-        self.new_char_field = StringVar(self)
-        self.new_char_entry = Entry(new_char_frame, width=10, textvariable=self.new_char_field)
-        self.new_char_entry.pack(side=RIGHT)
+        self.new_char_field = tk.StringVar(self)
+        self.new_char_entry = tk.Entry(new_char_frame, width=10, textvariable=self.new_char_field)
+        self.new_char_entry.pack(side=tk.RIGHT)
 
-        save_let_btn = Button(root, text="Save and continue", width=self.grid_width,
-                              command=lambda e: self.handle_save_new_letter())
-        detect_let_btn = Button(root, text="Detect current letter", width=self.grid_width,
-                                command=lambda e: self.handle_detect_letter())
+        save_let_btn = tk.Button(root, text="Save and continue", width=self.grid_width,
+                                 command=self.handle_save_new_letter)
+
+        detect_let_btn = tk.Button(root, text="Detect current letter", width=self.grid_width,
+                                   command=self.handle_detect_letter)
 
         # list of rows with widget objects, representing grid of corresponding widgets
         # to specify parameters for .grid function object is wrapped into dict with all it's parameters
 
         widgets_table_rows = [
-            [general_lab,    clear_btn,              shift_x_label,  self.shift_x_entry,     shift_y_label,  self.shift_y_entry],
-            [ch_file_lab,    self.file_entry,        open_file_btn,  save_file_btn],
-            [ch_let_lab,     self.ch_letter_menu,    None,           draw_curve_btn,         edit_btn,       del_btn],
+            [general_lab, clear_btn, shift_x_label, self.shift_x_entry, shift_y_label, self.shift_y_entry],
+            [ch_file_lab, self.file_entry, open_file_btn, save_file_btn],
+            [ch_let_lab, self.ch_letter_menu, None, draw_curve_btn, edit_btn, del_btn],
             [],
-            [create_let_lab, new_char_frame,         save_let_btn,   detect_let_btn],
-            [(self.canvas, {"columnspan": 6, "sticky": NSEW})]
+            [create_let_lab, new_char_frame, save_let_btn],  # detect_let_btn
+            [(self.canvas, {"columnspan": 6, "sticky": tk.NSEW})]
         ]
         # if argument not specifyed explicitly, take it from global arguments
-        global_arguments = {"padx": 5, "pady": 5, "sticky": EW}
+        global_arguments = {"padx": 5, "pady": 5, "sticky": tk.EW}
 
         root.columnconfigure(max(len(row) for row in widgets_table_rows), weight=1)
         root.rowconfigure(len(widgets_table_rows), weight=1)
 
         return widgets_table_rows, global_arguments
-
-    def dummy(self, event):
-        print(event)
 
     @staticmethod
     def put_objects_on_grid(grid_rows, arguments):
@@ -201,7 +198,7 @@ class HandwritingShiftModifyer(Frame):
     def setup_UI(self):
 
         self.parent.title("Handwriting manager")
-        self.pack(fill=BOTH, expand=1)
+        self.pack(fill=tk.BOTH, expand=1)
 
         grid, arguments = self.create_grid(self)
         self.put_objects_on_grid(grid, arguments)
@@ -219,7 +216,7 @@ class HandwritingShiftModifyer(Frame):
 
     def update_background_image(self):
         if Path(self.default_bg_path).exists():
-            self.background_image = PhotoImage(file=str(Path(self.default_bg_path).resolve()))
+            self.background_image = tk.PhotoImage(file=str(Path(self.default_bg_path).resolve()))
             self.canvas.create_image(
                 (
                     int(self.background_image.width() / 2),
@@ -227,23 +224,15 @@ class HandwritingShiftModifyer(Frame):
                 ),
                 image=self.background_image)
 
-    def set_current_path(self, path: HandwrittenPath = None):
-        """
-        Sets current draw path to given path and draws it on canvas
-        :param path: path to set, if Path is None, sets default empty path as current
-        """
-        self.current_path = HandwrittenPath('', []) if path is None else path
-        self.draw_current_path(self.current_path.get_position())
+    def handle_mouse_press(self, event: tk.Event):
+        pass
 
-    def handle_mouse_press(self, event):
-        print("press", event.state)
-
-    def handle_motion_draw(self, event):
+    def handle_motion_draw(self, event: tk.Event):
         # self.current_path.append_absolute(Point(event.x, event.y))
-        print('move', event.state)
+        pass
 
-    def handle_mouse_release(self, event):
-        print('release', event.state)
+    def handle_mouse_release(self, event: tk.Event):
+        pass
 
     def draw_line(self, point1: Point, point2: Point):
         self.canvas.create_line(point1.x, point1.y, point2.x, point2.y, fill=self.brush_color, width=self.brush_size)
@@ -255,90 +244,52 @@ class HandwritingShiftModifyer(Frame):
         :param anchor_point: if anchor_point is not None,
                             updates absolute position of current path
         """
-        self.reset_canvas()
-        for p1, p2 in self.current_path:
-            self.draw_line(p1, p2)
 
-    def handle_detect_letter(self):
+        if self.paths_iterator is not None:
+            path = self.paths_iterator.current()
+            if path is not None:
+                if anchor_point is not None:
+                    path.set_position(anchor_point)
+
+                self.reset_canvas()
+                for p1, p2 in path:
+                    self.draw_line(p1, p2)
+
+    def handle_detect_letter(self, event):
         pass
 
     def handle_letter_chosen(self, label_var, choice):
-        label_var.set(choice)
-        choice = label_var.get()
-        if choice in self.all_paths_dict:
-            self.handle_draw_path(self.all_paths_dict[choice])
-
-    def handle_enter_on_path(self, event):
-        file_path = self.handle_file_path()
-        new_group = PathGroup.read_next(file_path)
-        self.all_path_groups[new_group.name] = new_group
-
-    def handle_save_new_letter(self, clear=True):
-        name = self.make_unique_name(self.new_char_field.get(), self.all_paths_dict)
-        self.current_path.name = name
-        self.all_paths_dict[name] = copy.deepcopy(self.current_path)
-        self.refresh_letter_choices(self.all_paths_dict)
-        if clear:
-            self.reset_canvas()
-
-    def handle_draw_path(self, event):
         pass
 
-    def handle_edit_letter(self):
-        if self.cur_path_name_field.get() in self.all_paths_dict:
-            self.all_paths_dict[self.cur_path_name_field.get()] = copy.deepcopy(self.current_path)
-        else:
-            self.handle_save_new_letter(clear=False)
+    def handle_enter_on_path(self, event):
+        file_path = self.handle_file_path(self.file_path_field.get())
+        self.paths_dictionary = SignatureDictionary.from_file(file_path)
+        self.paths_iterator = self.paths_dictionary.get_iterator()
 
-    def handle_delete_letter(self):
-        if self.cur_path_name_field.get() in self.all_paths_dict:
-            if self.cur_path_name_field.get() in self.all_paths_dict:
-                to_delete = self.cur_path_name_field.get()
+    def handle_save_new_letter(self, event):
+        """Saves letter to path group using default (or specifyed) additional name"""
+        pass
 
-                cur_name = self.go_to_next_letter()  # it goes next and sets current name to next in dict
-                if len(self.all_paths_dict) == 1:
-                    cur_name = None
+    def handle_draw_path(self, event):
+        self.draw_current_path()
 
-                del self.all_paths_dict[to_delete]
-                self.refresh_letter_choices(self.all_paths_dict, cur_name)  # uses current name to set
-        else:
-            self.refresh_letter_choices(self.all_paths_dict)
+    def handle_edit_letter(self, event):
+        """Sets new path instead of current chosen letter"""
+        pass
+
+    def handle_delete_letter(self, event):
+        """Removes current letter from selected path group"""
+        pass
 
     def go_to_next_letter(self):
-        cur_name = self.cur_path_name_field.get()
-        keys_list = list(self.all_paths_dict.keys())
-
-        if len(keys_list) == 0:
-            self.reset_canvas()
-            return None
-
-        if cur_name not in keys_list:
-            cur_name = keys_list[0]
-            cur_idx = 0
-        else:
-            cur_idx = keys_list.index(cur_name)
-
-        cur_idx = (cur_idx + 1) % len(keys_list)
-        self.handle_letter_chosen(self.cur_path_name_field, keys_list[cur_idx])
-        return keys_list[cur_idx]
+        if self.paths_iterator is not None:
+            self.paths_iterator.next()
+            self.draw_current_path(self.get_shift_point())
 
     def go_to_prev_letter(self):
-        cur_name = self.cur_path_name_field.get()
-        keys_list = list(self.all_paths_dict.keys())
-
-        if len(keys_list) == 0:
-            self.reset_canvas()
-            return None
-
-        if cur_name in keys_list:
-            cur_idx = keys_list.index(cur_name)
-        else:
-            cur_name = keys_list[0]
-            cur_idx = 0
-
-        cur_idx = (cur_idx - 1) % len(keys_list)
-        self.handle_letter_chosen(self.cur_path_name_field, keys_list[cur_idx])
-        return cur_name
+        if self.paths_iterator is not None:
+            self.paths_iterator.prev()
+            self.draw_current_path(self.get_shift_point())
 
     def limit_is_int_shx(self, *args):
         value = self.shift_x_field.get()
@@ -357,14 +308,11 @@ class HandwritingShiftModifyer(Frame):
         except ValueError:
             return False
 
-    def set_field_choices(self, option_menu, label_var, choices, default=None):
-        if choices is not None:
-            label_var.set(self.can_select_message)
-        else:
-            label_var.set(self.no_file_message)
-            choices = [self.no_file_message]
-
-        option_menu['menu'].delete(0, 'end')
+    def set_field_choices(self, option_menu, label_var, choices: dict = None, default=None):
+        # option_menu['menu'].delete(0, 'end')
+        label_var.set(self.no_choices_message if choices is None else self.can_select_message)
+        if choices is None:
+            return
 
         for choice in choices:
             option_menu['menu'].add_command(label=choice,
@@ -373,7 +321,9 @@ class HandwritingShiftModifyer(Frame):
         if default is not None:
             label_var.set(default)
 
-    def open_selected_file(self, path=None):
+    def open_selected_file(self):
+        file_path = self.handle_file_path(self.file_path_field.get())
+
         # if path is None:
         #     file_path = self.handle_file_path(is_shift_file=self.shift_mode.get())
         # else:
@@ -400,84 +350,40 @@ class HandwritingShiftModifyer(Frame):
         return None
 
     def save_selected_file(self):
-        file_path = self.handle_file_path()
-        if file_path.exists():
-            with file_path.open('wb') as save_file:
-                for letter in self.all_paths_dict.values():
-                    save_file.write(letter.get_bytes(self.shift_mode.get()))
-                    save_file.write((0).to_bytes(4, 'big'))
+        self.paths_dictionary.save_file()
 
-    def refresh_letter_choices(self, choices_dict, default=None):
-        self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, list(choices_dict.keys()), default)
+    def refresh_letter_choices(self, choices: dict, default=None):
+        self.set_field_choices(self.ch_letter_menu, self.cur_path_name_field, choices, default)
 
     def handle_file_path(self, path_str=None):
-        # todo: rewrite this handler
-        # if path_str is None:
-        #     if len(self.file_path_field.get()) == 0:
-        #         if is_shift_file:
-        #             file_path = Path(self.d_file_name + self.d_shift_suffix + self.d_file_suffix)
-        #         else:
-        #             file_path = Path(self.d_file_name + self.d_file_suffix)
-        #         self.file_path_field.set(str(file_path))
-        #     else:
-        #         file_path = Path(self.file_path_field.get())
-        # else:
-        #     file_path = Path(path_str)
-        #
-        # if file_path.is_dir():
-        #     if is_shift_file:
-        #         def_file_path = file_path / (self.d_file_name + self.d_file_suffix)
-        #     else:
-        #         def_file_path = file_path / (self.d_file_name + self.d_shift_suffix + self.d_file_suffix)
-        #
-        #     if def_file_path.exists() and path_str is None:
-        #         messagebox.showinfo('Handwriting manager',
-        #                             'Found default file. Changing input path to\n' + str(def_file_path))
-        #
-        #     file_path = def_file_path
-        #
-        # if is_shift_file:
-        #     if file_path.suffixes != [self.d_shift_suffix, self.d_file_suffix]:
-        #         file_path = file_path.with_suffix(self.d_shift_suffix + self.d_file_suffix)
-        #         if path_str is None: self.file_path_field.set(str(file_path))
-        # else:
-        #     file_path = file_path.with_suffix('').with_suffix(self.d_file_suffix)
-        #
-        # if not file_path.exists():
-        #     file_path.parent.mkdir(parents=True, exist_ok=True)
-        #     file_path.touch()
-        #     messagebox.showinfo('Handwriting manager', 'Successfully created file\n' + str(file_path))
-        #
-        # self.file_path_field.set(str(file_path))
-        # return file_path
-        return Path(path_str)
+        file_path = Path(path_str) if path_str is not None else Path(self.file_path_field.get())
 
-    def __init__(self, parent):
-        Frame.__init__(self, parent)
-        self.parent = parent
+        sfx = SignatureDictionary.dictionary_suffix
+        if file_path.suffix != sfx:
+            file_path = file_path.with_suffix(sfx)
 
-        self.grid_width = 15
+        if not file_path.exists():
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.touch()
+            messagebox.showinfo('Handwriting manager', 'Successfully created file\n' + str(file_path))
 
-        self.brush_size = 5
-        self.brush_color = "black"
+        self.file_path_field.set(str(file_path))
+        return file_path
 
-        # dictionary of
+    @staticmethod
+    def get_int(field):
+        try:
+            return int(field.get())
+        except ValueError:
+            return 0
 
-        self.background_image = None
+    def get_shift_point(self):
+        """Reads values of two corresponding fields and returns Point object"""
+        return Point(self.get_int(self.shift_x_field), self.get_int(self.shift_y_field))
 
-        self.default_bg_path = 'default_bg.gif'
-
-        self.d_file_suffix = '.hndw'
-        self.no_file_message = 'no files'
-        self.can_select_message = 'select'
-
-        self.setup_UI()
-        self.reset_canvas()
-        # set default current path
-        self.set_current_path()
 
 def main():
-    root = Tk()
+    root = tk.Tk()
     root.geometry("800x700")
     app = HandwritingShiftModifyer(root)
     root.mainloop()
