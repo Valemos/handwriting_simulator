@@ -29,8 +29,12 @@ class HandwrittenPathIterator:
                 self.prev_point = self.cur_point
                 self.cur_point = next(self.point_iterator)
             except StopIteration:  # if curve iterator stopped go to next curve
+
+                # go one step forward in curves list
                 self.cur_curve = next(self.curve_iterator)
-                self.cur_curve.shift(self.prev_point)
+
+                # save previous absolute position to next curve to iteratre relative to new absolute position
+                self.cur_curve.last_absolute_point = self.prev_point
                 self.point_iterator = iter(self.cur_curve)
                 self.prev_point = next(self.point_iterator)
                 self.cur_point = next(self.point_iterator)
@@ -55,6 +59,10 @@ class HandwrittenPath(StreamSavableCollection):
         return sum((len(curve) for curve in self.components))
 
     def __iter__(self):
+        """
+        This iterator changes last_absolute_point values inside Curves according to new object position
+        :return: iterator
+        """
         return HandwrittenPathIterator(self)
 
     def copy(self):
@@ -67,6 +75,7 @@ class HandwrittenPath(StreamSavableCollection):
         :param point: new position for path
         """
         self.components[0].set_position(point)
+        self.components[0].last_absolute_point = Point(0, 0)
 
     def get_position(self):
         if len(self.components) > 0:

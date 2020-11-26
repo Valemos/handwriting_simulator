@@ -13,10 +13,18 @@ class CurveIterator:
     def __init__(self, obj):
         self.obj = obj
         self.first_point = obj.components[0] if len(obj.components) > 0 else None
-        self._cur_point = Point(0, 0)
+
+        # current point must be initialized with last_absolute_point
+        # to correctly continue iterations from last curve
+        self._cur_point = obj.last_absolute_point
         self._shifts_iter = iter(obj.components)
 
     def __next__(self):
+        """
+        Each iteration shifts previous point by next shift value from Curve shifts
+        :return: next element
+        """
+
         if self.first_point is None:
             raise StopIteration
 
@@ -86,7 +94,7 @@ class Curve(StreamSavable):
 
     def append_shift(self, point: Point):
         self.components.append(point)
-        self.last_absolute_point.shift(point)
+        self.last_absolute_point = self.last_absolute_point.shift(point)
 
     def append_absolute(self, point: Point):
         """

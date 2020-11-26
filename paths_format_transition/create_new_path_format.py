@@ -22,11 +22,24 @@ for file in input_files:
         new_path_group = PathGroup(file.name[:file.name.index('.')])
         for letter, points in letters_dict.items():
             curves = [Curve()]
+            last_curve_point = None
             for point in points:
                 if point != (65535, 65535):
-                    curves[-1].append_absolute(Point(*point))
+                    # first point must be shifted relative to previous curve if this curve is not the first
+                    if last_curve_point is not None:
+                        # calculate relative shift from last absolute point
+                        curves[-1].last_absolute_point = last_curve_point
+                        # must be called after last_curve_point assignment to avoid incorrect calculations
+                        curves[-1].append_shift(Point(*point).get_shift(last_curve_point))
+                        last_curve_point = None
+                    else:
+                        curves[-1].append_absolute(Point(*point))
                 else:
-                    curves.append(Curve())
+                    if len(curves) > 0:
+                        # create new curve and remember previous point
+                        last_curve_point = curves[-1].last_absolute_point
+                        curves.append(Curve())
+
             if len(curves[-1].components) == 0:
                 curves.pop(len(curves) - 1)
 

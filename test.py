@@ -1,6 +1,7 @@
 import io
 import os
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 import copy
 
@@ -86,14 +87,15 @@ class TestShiftPosition(unittest.TestCase):
             index += 1
 
 class TestDictionary(unittest.TestCase):
-    
-    def test_dict_iterator(self):
+
+    @patch("handwriting.signature_dictionary.SignatureDictionaryIterator.current")
+    def test_dict_iterator(self, *mocks):
         obj = SignatureDictionary.from_file(Path('paths_format_transition/anton_test.dict'))
         it = obj.get_iterator()
 
         for i in range(100):
-            it.prev()
             print(it.cur_group, it.cur_variant)
+            it.prev()
 
 if __name__ == '__main__':
     unittest.main()
