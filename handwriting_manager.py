@@ -258,7 +258,7 @@ class HandwritingShiftModifyer(tk.Frame):
         """
         if self._mouse_released:
             self._mouse_released = False
-            self.current_path.append_absolute(Point(event.x, event.y))
+            self.current_path.new_curve(Point(event.x, event.y))
         else:
             self.current_path.append_absolute(Point(event.x, event.y))
             self.draw_iterator(self.current_path_iterator)

@@ -11,7 +11,9 @@ class HandwrittenPathIterator:
 
     def __init__(self, obj):
         self.obj = obj
-        self.curve_iterator = iter(obj.components)
+
+        # cannot use list iterator because it will not update on container change
+        self.curve_index = 0
         self.point_iterator = None
         self.cur_curve = None
         self.prev_point = None
@@ -19,7 +21,11 @@ class HandwrittenPathIterator:
 
     def __next__(self):
         if self.cur_point is None:
-            self.cur_curve = next(self.curve_iterator)
+            if 0 <= self.curve_index < len(self.obj.components):
+                self.cur_curve = self.obj[self.curve_index]
+            else:
+                raise StopIteration
+
             self.point_iterator = iter(self.cur_curve)
             self.prev_point = next(self.point_iterator)
             self.cur_point = next(self.point_iterator)
@@ -28,13 +34,21 @@ class HandwrittenPathIterator:
                 # move to next line
                 self.prev_point = self.cur_point
                 self.cur_point = next(self.point_iterator)
-            except StopIteration:  # if curve iterator stopped go to next curve
+            except StopIteration:  # if curve iterator stopped, than it is the last point
 
                 # go one step forward in curves list
-                self.cur_curve = next(self.curve_iterator)
+                self.curve_index += 1
+                if 0 <= self.curve_index < len(self.obj):
+                    try:
+                        self.cur_curve = self.obj[self.curve_index]
+                    except:
+                        pass
+                else:
+                    self.curve_index -= 1
+                    raise StopIteration
 
                 # save previous absolute position to next curve to iteratre relative to new absolute position
-                self.cur_curve.last_absolute_point = self.prev_point
+                self.cur_curve.initial_shift_point = self.prev_point
                 self.point_iterator = iter(self.cur_curve)
                 self.prev_point = next(self.point_iterator)
                 self.cur_point = next(self.point_iterator)
@@ -56,7 +70,7 @@ class HandwrittenPath(StreamSavableCollection):
         super().__init__(curves if curves is not None else [])
 
     def __len__(self):
-        return sum((len(curve) for curve in self.components))
+        return len(self.components)
 
     def __iter__(self):
         """
@@ -65,8 +79,8 @@ class HandwrittenPath(StreamSavableCollection):
         """
         return HandwrittenPathIterator(self)
 
-    def copy(self):
-        return HandwrittenPath(str(self.name), list(self.components))
+    def __getitem__(self, i):
+        return self.components[i]
 
     def set_position(self, point: Point):
         """
@@ -75,7 +89,7 @@ class HandwrittenPath(StreamSavableCollection):
         :param point: new position for path
         """
         self.components[0].set_position(point)
-        self.components[0].last_absolute_point = Point(0, 0)
+        self.components[0].initial_shift_point = Point(0, 0)
 
     def get_position(self):
         if len(self.components) > 0:
@@ -87,7 +101,9 @@ class HandwrittenPath(StreamSavableCollection):
         """
         This handler must be called after user click
         Creates new curve, to write shifts to it
+
         Also if this curve is not first, calculates shift relative to end of last curve
+
         :param first_point: next absolute point to start Curve with
         """
 

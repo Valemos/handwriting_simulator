@@ -2,7 +2,6 @@ import pickle
 
 from handwriting.point import Point
 from handwriting.stream_savable import StreamSavable
-from handwriting.stream_savable_collection import StreamSavableCollection
 
 
 class CurveIterator:
@@ -15,9 +14,11 @@ class CurveIterator:
         self.first_point = obj.components[0] if len(obj.components) > 0 else None
 
         # current point must be initialized with last_absolute_point
-        # to correctly continue iterations from last curve
-        self._cur_point = obj.last_absolute_point
-        self._shifts_iter = iter(obj.components)
+        # to correctly continue iterations relative to last curve
+        self.cur_point = obj.initial_shift_point
+
+        # cannot use list iterator because it will not update if container was changed
+        self.shift_index = 0
 
     def __next__(self):
         """
@@ -28,11 +29,13 @@ class CurveIterator:
         if self.first_point is None:
             raise StopIteration
 
-        # shifts iterator will raise StopIteration
-        # and each iterator will correctly stop
-        next_shift = next(self._shifts_iter)
-        self._cur_point = self._cur_point.shift(next_shift)
-        return self._cur_point
+        if 0 <= self.shift_index < len(self.obj):
+            # self.obj.components contains list of shifts relative to previous point
+            self.cur_point = self.cur_point.shift(self.obj[self.shift_index])
+            self.shift_index += 1
+            return self.cur_point
+        else:
+            raise StopIteration
 
 
 class Curve(StreamSavable):
@@ -48,6 +51,10 @@ class Curve(StreamSavable):
         # absolute point used to calculate next shift point for append handler
         self.last_absolute_point = self.calc_last_point()
 
+        # this point must be passed to this curve to start iterations from this point
+        # if this point is not zero, this means, that curve will be shifted relative to
+        self.initial_shift_point = Point(0, 0)
+
     def __eq__(self, other):
         return all(map(lambda x, y: x == y, self.components, other.components))
 
@@ -56,6 +63,9 @@ class Curve(StreamSavable):
 
     def __iter__(self):
         return CurveIterator(self)
+
+    def __getitem__(self, i):
+        return self.components[i]
 
     def get_position(self):
         if len(self.components) > 0:

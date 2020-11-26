@@ -50,7 +50,9 @@ class TestPath(unittest.TestCase):
     def test_path_iteration(self):
         path = copy.deepcopy(test_path)
         it = iter(path)
-        self.assertEqual(next(it), (Point(1, 10), Point(2, 20)))
+        val = next(it)
+        self.assertEqual(val[0], Point(1, 10))
+        self.assertEqual(val[1], Point(2, 20))
         next(it)
         next(it)
 
