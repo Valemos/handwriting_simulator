@@ -9,13 +9,13 @@ class CurveIterator:
     This class iterates through shifts in Curve
     and returns absolute values of points
     """
-    def __init__(self, obj):
+    def __init__(self, obj, initial_shift=None):
         self.obj = obj
         self.first_point = obj.components[0] if len(obj.components) > 0 else None
 
         # current point must be initialized with last_absolute_point
         # to correctly continue iterations relative to last curve
-        self.cur_point = obj.initial_shift_point
+        self.cur_point = initial_shift if initial_shift is not None else Point(0, 0)
 
         # cannot use list iterator because it will not update if container was changed
         self.shift_index = 0
@@ -51,21 +51,17 @@ class Curve(StreamSavable):
         # absolute point used to calculate next shift point for append handler
         self.last_absolute_point = self.calc_last_point()
 
-        # this point must be passed to this curve to start iterations from this point
-        # if this point is not zero, this means, that curve will be shifted relative to
-        self.initial_shift_point = Point(0, 0)
-
     def __eq__(self, other):
         return all(map(lambda x, y: x == y, self.components, other.components))
 
     def __len__(self):
         return len(self.components)
 
-    def __iter__(self):
-        return CurveIterator(self)
-
     def __getitem__(self, i):
         return self.components[i]
+
+    def get_shifted_iterator(self, shift: Point = None):
+        return CurveIterator(self, shift)
 
     def get_position(self):
         if len(self.components) > 0:
@@ -125,19 +121,6 @@ class Curve(StreamSavable):
         for p in abs_points:
             new_curve.append_absolute(p)
         return new_curve
-
-    def get_absolute_points(self, anchor: Point):
-        """
-        This handler creates set of absolute points shifted relative to first point,
-        first point is equal to the anchor point
-
-        :param anchor:
-        :return: iterator in list of absolute points relative to anchor point
-        """
-        new_points = [anchor]
-        for shift_amount in self.components[1:]:
-            new_points.append(new_points[-1].shift(shift_amount))
-        return new_points
 
     def calc_last_point(self):
         """

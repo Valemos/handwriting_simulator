@@ -64,7 +64,7 @@ class SignatureDictionaryIterator:
         return None
 
     def select(self, group_i: int, variant_i: int = None):
-        """Moves all indices according to new selected indices if they are in allowed range"""
+        """Assignes indices according to arguments if they are in allowed range"""
         if 0 <= group_i < len(self.obj):
             self.cur_group = group_i
             if variant_i is None:
@@ -72,10 +72,14 @@ class SignatureDictionaryIterator:
             elif 0 <= variant_i < len(self.obj[group_i]):
                 self.cur_variant = variant_i
 
+    def delete_group(self):
+        if 0 <= self.cur_group < len(self.obj):
+            self.cur_group = self.obj.remove_group(self.cur_group)
+
     def delete_current(self):
         if 0 <= self.cur_group < len(self.obj):
             if 0 <= self.cur_variant < len(self.obj[self.cur_group]):
-                self.cur_group, self.cur_variant = self.obj.remove_by_index(self.cur_group, self.cur_variant)
+                self.cur_group, self.cur_variant = self.obj.remove_variant(self.cur_group, self.cur_variant)
 
 
 class SignatureDictionary:
@@ -136,29 +140,34 @@ class SignatureDictionary:
             for group in self._path_groups:
                 group.write_to_stream(fout)
 
-    def remove_by_index(self, group_i, variant_i):
+    def remove_group(self, group_i):
+        """
+        Deletes group on current index
+        :return: new group index
+        """
+
+        if 0 <= group_i < len(self._path_groups):
+            self._path_groups.pop(group_i)
+            return group_i % len(self._path_groups)
+        return 0
+
+    def remove_variant(self, group_i, variant_i):
         """
         Removes path variant from group if it exists
 
-        If we deleted all path variants, path group will be deleted
+        If we deleted all path variants, nothing will change
 
         :param group_i:     index of group
         :param variant_i:   index of path variant
         :return: returns new indices to replace previous deleted indices
         """
+
         if 0 <= group_i < len(self._path_groups):
             group = self._path_groups[group_i]
-
             if 0 <= variant_i < len(group):
                 group.remove_by_index(variant_i)
-                return group_i, step_backwards(variant_i, len(group) - 1)
-            elif len(group) == 0:
-                # this means, that current group is empty and we must delete path group
-                self._path_groups.pop(group_i)
-                return step_backwards(group_i, len(self._path_groups) - 1), 0
-
-        # group index was not in interval [0, groups_count - 1)
-        # return default indices
+                return group_i, variant_i % len(group)
+            return group_i, 0
         return 0, 0
 
     @staticmethod

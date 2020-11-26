@@ -43,7 +43,8 @@ for file in input_files:
             if len(curves[-1].components) == 0:
                 curves.pop(len(curves) - 1)
 
-            new_path_group.append_path(HandwrittenPath(letter, curves))
+            if sum((len(cr) for cr in curves)) > 10:
+                new_path_group.append_path(HandwrittenPath(letter, curves))
         new_dictionary.append_group(new_path_group)
 
 new_dictionary.save_file()

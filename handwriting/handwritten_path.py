@@ -26,7 +26,7 @@ class HandwrittenPathIterator:
             else:
                 raise StopIteration
 
-            self.point_iterator = iter(self.cur_curve)
+            self.point_iterator = self.cur_curve.get_shifted_iterator()
             self.prev_point = next(self.point_iterator)
             self.cur_point = next(self.point_iterator)
         else:
@@ -39,17 +39,13 @@ class HandwrittenPathIterator:
                 # go one step forward in curves list
                 self.curve_index += 1
                 if 0 <= self.curve_index < len(self.obj):
-                    try:
-                        self.cur_curve = self.obj[self.curve_index]
-                    except:
-                        pass
+                    self.cur_curve = self.obj[self.curve_index]
                 else:
                     self.curve_index -= 1
                     raise StopIteration
 
                 # save previous absolute position to next curve to iteratre relative to new absolute position
-                self.cur_curve.initial_shift_point = self.prev_point
-                self.point_iterator = iter(self.cur_curve)
+                self.point_iterator = self.cur_curve.get_shifted_iterator(self.prev_point)
                 self.prev_point = next(self.point_iterator)
                 self.cur_point = next(self.point_iterator)
 
@@ -89,7 +85,6 @@ class HandwrittenPath(StreamSavableCollection):
         :param point: new position for path
         """
         self.components[0].set_position(point)
-        self.components[0].initial_shift_point = Point(0, 0)
 
     def get_position(self):
         if len(self.components) > 0:
