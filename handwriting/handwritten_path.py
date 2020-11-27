@@ -10,7 +10,7 @@ class HandwrittenPathIterator:
     """
 
     def __init__(self, obj):
-        self.obj = obj
+        self.path = obj
 
         # cannot use list iterator because it will not update on container change
         self.curve_index = 0
@@ -21,12 +21,10 @@ class HandwrittenPathIterator:
 
     def __next__(self):
         if self.cur_point is None:
-            if 0 <= self.curve_index < len(self.obj.components):
-                self.cur_curve = self.obj[self.curve_index]
-            else:
+            if self.curve_index >= len(self.path):
                 raise StopIteration
 
-            self.point_iterator = self.cur_curve.get_shifted_iterator()
+            self.point_iterator = self.path[self.curve_index].get_shifted_iterator()
             self.prev_point = next(self.point_iterator)
             self.cur_point = next(self.point_iterator)
         else:
@@ -37,17 +35,21 @@ class HandwrittenPathIterator:
             except StopIteration:  # if curve iterator stopped, than it is the last point
 
                 # go one step forward in curves list
-                self.curve_index += 1
-                if 0 <= self.curve_index < len(self.obj):
-                    self.cur_curve = self.obj[self.curve_index]
+                if self.curve_index < len(self.path) - 1:
+                    self.curve_index += 1
                 else:
-                    self.curve_index -= 1
                     raise StopIteration
 
                 # save previous absolute position to next curve to iteratre relative to new absolute position
-                self.point_iterator = self.cur_curve.get_shifted_iterator(self.prev_point)
-                self.prev_point = next(self.point_iterator)
-                self.cur_point = next(self.point_iterator)
+                self.point_iterator = self.path[self.curve_index].get_shifted_iterator(self.prev_point)
+                if len(self.path[self.curve_index]) == 1:
+                    # if there are only one point in curve, we must draw line from point to itself
+                    # on the next iteration this curve will be skipped
+                    self.prev_point = next(self.point_iterator)
+                    self.cur_point = self.prev_point
+                else:
+                    self.prev_point = next(self.point_iterator)
+                    self.cur_point = next(self.point_iterator)
 
         return self.prev_point, self.cur_point
 
@@ -82,9 +84,15 @@ class HandwrittenPath(StreamSavableCollection):
         """
         Sets absolute position of current path
         to iterate through it and get all points shifted relative to new position
+
+        Updates last absolute points for each Curve in self.components
         :param point: new position for path
         """
-        self.components[0].set_position(point)
+        if len(self.components) > 0:
+            self.components[0].set_position(point)
+            last_point = self.components[0].calc_last_point()
+            for curve in self.components[1:]:
+                last_point = curve.calc_last_point(last_point)
 
     def get_position(self):
         if len(self.components) > 0:
@@ -102,10 +110,10 @@ class HandwrittenPath(StreamSavableCollection):
         :param first_point: next absolute point to start Curve with
         """
 
-        # (0, 0) point will not shift first first point of a Curve
-        # and absolute value will be recorded as first value
-        last_point = self.components[-1].last_absolute_point if len(self.components) > 0 else Point(0, 0)
-        self.components.append(Curve([first_point.get_shift(last_point)]))
+        curve = Curve()
+        curve.calc_last_point(self.components[-1].last_absolute_point if len(self.components) > 0 else None)
+        curve.append_absolute(first_point)
+        self.components.append(curve)
 
     def append_shift(self, point: Point):
         """
@@ -119,7 +127,11 @@ class HandwrittenPath(StreamSavableCollection):
         Appends absolute value of point to last curve
         :param point: absolute position
         """
-        self.components[-1].append_absolute(point)
+
+        if len(self.components) > 0:
+            self.components[-1].append_absolute(point)
+        else:
+            self.new_curve(point)
 
     def empty(self):
         return self.name == '' and super().empty()

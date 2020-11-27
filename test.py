@@ -90,7 +90,7 @@ class TestShiftPosition(unittest.TestCase):
 
 class TestDictionary(unittest.TestCase):
 
-    @patch("handwriting.signature_dictionary.SignatureDictionaryIterator.current")
+    @patch("handwriting.signature_dictionary.SignatureDictionaryPathsIterator.current")
     def test_dict_iterator(self, *mocks):
         obj = SignatureDictionary.from_file(Path('paths_format_transition/anton_test.dict'))
         it = obj.get_iterator()

@@ -3,28 +3,9 @@ from pathlib import Path
 from handwriting.handwritten_path import HandwrittenPath
 from handwriting.path_group import PathGroup
 
+from handwriting.step_functions import *
 
-def step_backwards(num, mx):
-    """
-    This function implements stepping in backward direction by 1 for some integer
-    :param num: int number to step with
-    :param mx: maximum value number can get to
-    :return: number stepped back by 1
-    """
-    return (num - 1) if num > 0 else mx
-
-
-def step_forwards(num, mx):
-    """
-    This function implements stepping in forward direction by 1 for some integer
-    :param num: int number to step with
-    :param mx: next integer value after maximum number
-    :return: number stepped forward by 1
-    """
-    return (num + 1) if num < mx else 0
-
-
-class SignatureDictionaryIterator:
+class SignatureDictionaryPathsIterator:
 
     def __init__(self, obj):
         self.obj = obj
@@ -109,16 +90,9 @@ class SignatureDictionary:
         return len(self._path_groups)
 
     def __str__(self):
-        return f"{self.name} [{len(self._path_groups)}]"
+        return f"{self.name}: {len(self._path_groups)}"
 
     def __getitem__(self, group_i):
-        """
-        Uses pair of values to access
-        :param group_i: index of group
-        :return: group
-        """
-
-        # calls to dictionary will raise exceptions if indices not correct
         return self._path_groups[group_i]
 
     def __contains__(self, item):
@@ -132,7 +106,7 @@ class SignatureDictionary:
 
     def get_iterator(self):
         """Returns bidirectional iterator for path groups and their variants"""
-        return SignatureDictionaryIterator(self)
+        return SignatureDictionaryPathsIterator(self)
 
     def save_file(self, file_name=None):
         file_name = file_name if file_name is not None else Path(self.name).with_suffix(self.dictionary_suffix)
@@ -148,7 +122,7 @@ class SignatureDictionary:
 
         if 0 <= group_i < len(self._path_groups):
             self._path_groups.pop(group_i)
-            return group_i % len(self._path_groups)
+            return group_i % len(self._path_groups) if len(self._path_groups) > 0 else 0
         return 0
 
     def remove_variant(self, group_i, variant_i):
@@ -166,7 +140,7 @@ class SignatureDictionary:
             group = self._path_groups[group_i]
             if 0 <= variant_i < len(group):
                 group.remove_by_index(variant_i)
-                return group_i, variant_i % len(group)
+                return group_i, variant_i % len(group) if len(group) > 0 else 0
             return group_i, 0
         return 0, 0
 

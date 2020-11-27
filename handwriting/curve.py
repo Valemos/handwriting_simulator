@@ -30,7 +30,7 @@ class CurveIterator:
             raise StopIteration
 
         if 0 <= self.shift_index < len(self.obj):
-            # self.obj.components contains list of shifts relative to previous point
+            # self.path.components contains list of shifts relative to previous point
             self.cur_point = self.cur_point.shift(self.obj[self.shift_index])
             self.shift_index += 1
             return self.cur_point
@@ -122,24 +122,25 @@ class Curve(StreamSavable):
             new_curve.append_absolute(p)
         return new_curve
 
-    def calc_last_point(self):
+    def calc_last_point(self, prev_point=None):
         """
         Method calculates absolute position of last point using self.shifts list.
         First point in self.shifts is considered as a starting point.
         Each next point is a relative shift from previous point.
 
-        If shifts list is empty, resulting point is considered to be (0, 0)
+        If shifts list is empty, resulting point is considered to be equal to previous_point
 
-        :returns absolute value for last point in shifts list
+        :param prev_point: last absolute point from previous curve in sequence
+        :return: absolute value for last point in shifts list
         """
-        if len(self.components) == 0:
-            return Point(0, 0)
+        point = Point(0, 0) if prev_point is None else prev_point
 
-        point = self.components[0]
-        for i in range(1, len(self.components)):
-            point = point.shift(self.components[i])
+        if len(self.components) > 0:
+            for i in range(len(self.components)):
+                point = point.shift(self.components[i])
+
+        self.last_absolute_point = point
         return point
-
 
     # object saving
 
