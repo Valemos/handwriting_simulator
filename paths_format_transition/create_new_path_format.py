@@ -6,14 +6,14 @@ from handwriting.path_group import PathGroup
 from handwriting.point import Point
 from handwriting.signature_dictionary import SignatureDictionary
 
-input_files = list(Path("../letters/").glob("*.dat"))[:3]
+input_files = list(Path("../letters/").glob("*.dat"))
 
 output_folder = Path("../my_letters")
 
 # test_file = Path('test.dat')
 # test_file.open('w+').close()
 
-new_dictionary = SignatureDictionary("anton_test")
+new_dictionary = SignatureDictionary("anton")
 
 for file in input_files:
     with file.open('rb') as fin:

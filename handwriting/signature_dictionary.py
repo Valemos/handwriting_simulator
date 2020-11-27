@@ -81,7 +81,6 @@ class SignatureDictionary:
         :param path_groups:
         """
         self.name = name
-        self._save_path = Path(name).with_suffix(self.dictionary_suffix)
 
         # dictionary holds indices of path_groups list
         self._path_groups = path_groups if path_groups is not None else []
@@ -108,8 +107,14 @@ class SignatureDictionary:
         """Returns bidirectional iterator for path groups and their variants"""
         return SignatureDictionaryPathsIterator(self)
 
-    def save_file(self, file_name=None):
-        file_name = file_name if file_name is not None else Path(self.name).with_suffix(self.dictionary_suffix)
+    def get_save_path(self, file_name: Path = None):
+        return \
+            file_name.with_suffix(self.dictionary_suffix) \
+            if file_name is not None else \
+            Path(self.name).with_suffix(self.dictionary_suffix)
+
+    def save_file(self, file_name: Path = None):
+        file_name = self.get_save_path(file_name)
         with file_name.open('wb+') as fout:
             for group in self._path_groups:
                 group.write_to_stream(fout)

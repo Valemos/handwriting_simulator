@@ -6,16 +6,15 @@ import numpy as np
 
 from handwriting.letter_processing import TextWriter
 import path_manager as pm
-from memory_limiter import limit_memory
+from app.tkinter_shortcuts import bind_handlers, put_objects_on_grid, update_integer_field
+
 
 class PhotoTextWriter(tk.Frame):
 
-    def __init__(self, parent):
-        limit_memory(1000)
-        
-        parent.geometry("800x650")
-        tk.Frame.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, root):
+        root.geometry("800x650")
+        tk.Frame.__init__(self, root)
+        self.root = root
         
         self.grid_width = 15
         self.grid_height = 1
@@ -54,102 +53,144 @@ class PhotoTextWriter(tk.Frame):
         
         self.setUI()
         self.reset_canvas()
-    
-    def setUI(self):
- 
-        self.parent.title("Text writer")
-        self.pack(fill = tk.BOTH, expand=1)
- 
+
+    def create_events_dict(self):
+        """
+        dictionary with keys as events and handler functions as values
+        format as follows <modifier-type-first_part>, handler at the end of the chain
+        handler handler can be a tuple of Tkinter object and handler handler to bind to it
+        if bind object is not specifyed, event will be bound to root
+        """
+
+        return \
+            {
+                # event type
+                "B1": {
+                    "ButtonRelease":    (self.canvas, self.handle_mouse_release),
+                    "Motion":           (self.canvas, self.handle_motion_draw)
+                },
+                "KeyPress": {
+                    "Left": self.go_to_prev_letter,
+                    "Right": self.go_to_next_letter,
+                    "Return": [
+                        (self.entry_shift_x, self.handle_draw_path),
+                        (self.entry_shift_y, self.handle_draw_path),
+                        (self.file_entry, self.handle_enter_on_path),
+                        (self.entry_new_group, self.handle_create_new_path),
+                        (self.entry_new_variant, self.handle_create_new_path)
+                    ],
+                    "Delete": self.handle_delete_path,
+                    "space": self.handle_create_new_path
+                }
+            }
+
+    def create_ui_grid(self, root):
+        """
+        Grid must be created before event binding
+        :return: grid of objects
+        """
+
+        grid_width = 15
+
+        self.root.title("")
+        self.pack(fill=tk.BOTH, expand=1)
         self.columnconfigure(6, weight=1)
         self.rowconfigure(5, weight=1)
- 
-        self.canv = tk.Canvas(self, bg="white", height = 600)
+        self.canv = tk.Canvas(self, bg="white", height=600)
         self.reset_canvas()
-        self.canv.grid(row=5, column=0, columnspan=7,
-                       padx=5, pady=5, sticky=tk.E+tk.W+tk.S+tk.N)
-        
+
         color_lab = tk.Label(self, text="General: ")
-        color_lab.grid(row=0, column=0, padx=6)
-        
-        draw_shift_chk = tk.Checkbutton(self, text="Shift mode", width=self.grid_width, height = self.grid_height, variable=self.shift_paths_open_mode, onvalue=1, offvalue=0)
-        draw_shift_chk.grid(row=0, column=1, sticky=tk.W+ tk.E)
-        
-        clear_btn = tk.Button(self, text="Clear all", width=self.grid_width, height = self.grid_height, command = lambda: self.reset_canvas())
-        clear_btn.grid(row=0, column=2, sticky=tk.W + tk.E)
-        
-        self.parent.bind('<Control-Key-d>', lambda e: self.reset_canvas())
-        
+
+        draw_shift_chk = tk.Checkbutton(self, text="Shift mode", width=self.grid_width, height=self.grid_height,
+                                        variable=self.shift_paths_open_mode, onvalue=1, offvalue=0)
+
+        clear_btn = tk.Button(self, text="Clear all", width=self.grid_width, height=self.grid_height,
+                              command=lambda: self.reset_canvas())
+
+        self.root.bind('<Control-Key-d>', lambda e: self.reset_canvas())
         ch_file_path_label = tk.Label(self, text="Choose letters file: ")
-        ch_file_path_label.grid(row=1, column=0, padx=5)
-        
         self.file_path_var = tk.StringVar(self)
-        letters_path_entry = tk.Entry(self, width=self.grid_width, textvariable = self.file_path_var)
-        letters_path_entry.grid(row=1, column=1, sticky=tk.E+tk.W, padx=5)
+        letters_path_entry = tk.Entry(self, width=self.grid_width, textvariable=self.file_path_var)
 
         letters_path_entry.bind('<Return>', self.handle_enter_on_path)
-        
-        
         ch_pages_path_label = tk.Label(self, text="Choose pages folder: ")
-        ch_pages_path_label.grid(row=2, column=0, padx=5)
-        
+
         self.pages_path_var = tk.StringVar(self)
-        pages_path_entry = tk.Entry(self, width=self.grid_width, textvariable = self.pages_path_var)
-        pages_path_entry.grid(row=2, column=1, sticky=tk.E+tk.W, padx=5)
+        pages_path_entry = tk.Entry(self, width=self.grid_width, textvariable=self.pages_path_var)
+
         pages_path_entry.bind('<Return>', self.handle_enter_on_dir)
-        
         self.cur_page_name_var = tk.StringVar(self)
         self.cur_page_name_var.set(self.msg_no_option)
-        self.ch_page_menu = tk.OptionMenu(self, self.cur_page_name_var, value = None)
+        self.ch_page_menu = tk.OptionMenu(self, self.cur_page_name_var, value=None)
         self.refresh_menu_choices()
-        self.ch_page_menu.grid(row=1, column=2, sticky= tk.W)
+
         self.ch_page_menu.config(width=self.grid_width, height=self.grid_height)
-        
         # enter press opens files
-        
         control_btn_frame = tk.Frame(self)
-        control_btn_frame.grid(row=2, column=2, sticky=tk.W+tk.E)
-        control_btn_prev = tk.Button(control_btn_frame, text='<<', command = lambda: self.go_to_prev_page(), width=round(self.grid_width/2))
-        control_btn_next = tk.Button(control_btn_frame, text='>>', command = lambda: self.go_to_next_page(), width=round(self.grid_width/2))
+
+        control_btn_prev = tk.Button(control_btn_frame, text='<<', command=lambda: self.go_to_prev_page(),
+                                     width=round(self.grid_width / 2))
+        control_btn_next = tk.Button(control_btn_frame, text='>>', command=lambda: self.go_to_next_page(),
+                                     width=round(self.grid_width / 2))
         control_btn_prev.pack(side=tk.LEFT)
         control_btn_next.pack(side=tk.RIGHT)
-        
-        self.parent.bind('<Left>', lambda e: self.go_to_prev_page())
-        self.parent.bind('<Right>', lambda e: self.go_to_next_page())
-        
-        
-        # save_letter_btn = tk.Button(self, text="Save page", width=self.grid_width, height=self.grid_height, command = lambda: self.handle_save_page())
-        # save_letter_btn.grid(row=3, column=2, sticky=tk.W+tk.E)
 
-        draw_text_btn = tk.Button(self, text="Remove image", width=round(self.grid_width/3*2), height=self.grid_height, command=lambda: self.handle_remove_image())
-        draw_text_btn.grid(row=1, column=3, sticky=tk.W+tk.E)    
+        self.root.bind('<Left>', lambda e: self.go_to_prev_page())
+        self.root.bind('<Right>', lambda e: self.go_to_next_page())
 
-        draw_text_btn = tk.Button(self, text="Draw text", width=round(self.grid_width/3*2), height=self.grid_height, command=lambda: self.handle_draw_text())
-        draw_text_btn.grid(row=2, column=3, sticky=tk.W+tk.E)
-        
-        reset_text_btn = tk.Button(self, text="Reset text", width=round(self.grid_width/3*2), command=lambda: self.handle_reset_text())
-        reset_text_btn.grid(row=3, column=3, sticky=tk.W+tk.E)
-        
+        draw_text_btn = tk.Button(self, text="Remove image", width=round(self.grid_width * 2 / 3),
+                                  height=self.grid_height, command=lambda: self.handle_remove_image())
+
+        draw_text_btn = tk.Button(self, text="Draw text", width=round(self.grid_width * 2 / 3), height=self.grid_height,
+                                  command=lambda: self.handle_draw_text())
+
+        reset_text_btn = tk.Button(self, text="Reset text", width=round(self.grid_width * 2 / 3),
+                                   command=lambda: self.handle_reset_text())
+
         # text area abs_points
-        points_btn = tk.Button(self, text="Points", width=self.grid_width, height=self.grid_height, command = lambda: self.handle_init_text_points())
-        points_btn.grid(row=0, column=4, sticky=tk.W+tk.E)
-        
+        points_btn = tk.Button(self, text="Points", width=self.grid_width, height=self.grid_height,
+                               command=lambda: self.handle_init_text_points())
+
         self.points_values_var = tk.StringVar(self)
-        self.points_values_var.set(self.text_points_format.format(*[0]*6))
-        points_values_str = tk.Label(self, width = self.grid_width, textvariable = self.points_values_var)#500,500,500,500,500,500))
-        points_values_str.grid(row=1, column=4, padx=5)
-        
+        self.points_values_var.set(self.text_points_format.format(*[0] * 6))
+        points_values_str = tk.Label(self, width=self.grid_width,
+                                     textvariable=self.points_values_var)  # 500,500,500,500,500,500))
+
         space_sz_label = tk.Label(self, text="Space size")
-        space_sz_label.grid(row=0, column=6, padx=5)
-        
+
         self.space_sz_var = tk.StringVar(self)
         self.space_sz_var.set(50)
-        self.space_sz_var.trace('w', lambda *args: self.limit_var_int(self.space_sz_var))
-        
-        space_sz_entry = tk.Entry(self, width=self.grid_width, textvariable = self.space_sz_var)
-        space_sz_entry.grid(row=1, column=6, padx=5)
-        
-        self.draw_text_var = tk.Text(self, width=self.grid_width*3, height=self.grid_height*3)
-        self.draw_text_var.grid(row=2, column=4, rowspan=2, columnspan=3, sticky=tk.E+tk.W, padx=5)
+        space_sz_entry = tk.Entry(self, width=self.grid_width, textvariable=self.space_sz_var)
+        self.draw_text_var = tk.Text(self, width=self.grid_width * 3, height=self.grid_height * 3)
+
+
+        # arrange table
+        widgets_table_rows = [
+            [color_lab, draw_shift_chk, clear_btn, points_btn, space_sz_label, points_values_str],
+            [ch_file_path_label, letters_path_entry, self.ch_page_menu, space_sz_entry],
+            [ch_pages_path_label, pages_path_entry, control_btn_frame, draw_text_btn, (self.draw_text_var, {"rowspan": 2, "columnspan": 3})],
+            [reset_text_btn, points_values_str],
+            [],
+            [(self.canv, {"columnspan": 7, "sticky": None})],
+        ]
+
+        # if argument not specifyed explicitly, take it from global arguments
+        global_arguments = {"padx": 5, "pady": 5, "sticky": tk.EW}
+
+        columns_count = max(len(row) for row in widgets_table_rows)
+        root.columnconfigure(columns_count, weight=1)
+        root.rowconfigure(len(widgets_table_rows), weight=1)
+
+        return widgets_table_rows, global_arguments
+
+    def setup_UI(self):
+
+        self.root.title("Text writer")
+        self.pack(fill=tk.BOTH, expand=1)
+
+        put_objects_on_grid(*self.create_ui_grid(self))
+
+        bind_handlers(self.create_events_dict())
             
     def reset_canvas(self):
         self.canv.delete("all")
@@ -176,7 +217,6 @@ class PhotoTextWriter(tk.Frame):
         
         
     def handle_enter_on_path(self, event):
-        file_path = self.handle_file_path(is_shift_file = self.shift_paths_open_mode.get())
         self.open_selected_letters_file(file_path, self.shift_paths_open_mode.get())
         
     def handle_enter_on_dir(self, event):
@@ -250,7 +290,7 @@ class PhotoTextWriter(tk.Frame):
         self.all_text_points[cur_page] = [0, 0, 0, 0, 0, 0]
         self.canv.bind('<Button-1>', self.handle_point_init_click)
         self.points_counter = 0
-    
+
     def handle_point_init_click(self, event):
         
         real_point = self.get_real_point_coords((event.x, event.y))
@@ -419,23 +459,7 @@ class PhotoTextWriter(tk.Frame):
        
     def refresh_menu_choices(self, default = None):
         self.set_menu_choices(self.ch_page_menu, self.cur_page_name_var, list(self.all_pages.keys()), default)
-        
-    def open_selected_letters_file(self, path = None, is_shift = False):
-        self.all_letters = pm.load_paths_file(path, is_shift)
-            
-        
-    def init_page_images(self, path = None):
-        file_path = self.handle_dir()
-        
-        for path in file_path.glob('*'+self.image_suffix):
-            self.all_pages[path.with_suffix('').name] = Image.open(path)
-            
-        if len(self.all_pages)>0:
-            self.cur_page_name_var.set(self.msg_can_select)
-            self.refresh_menu_choices()
-        else:
-            self.cur_page_name_var.set(self.msg_no_option)
-            
+
     def make_unique_name(self, name, dct):
         if len(name) == 0: name = self.d_path_name
         count = 1
