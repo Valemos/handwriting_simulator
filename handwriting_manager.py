@@ -76,9 +76,11 @@ class HandwritingShiftModifyer(tk.Frame):
                         (self.entry_shift_x, self.handle_draw_path),
                         (self.entry_shift_y, self.handle_draw_path),
                         (self.file_entry, self.handle_enter_on_path),
-                        self.handle_create_new_path
+                        (self.entry_new_group, self.handle_create_new_path),
+                        (self.entry_new_variant, self.handle_create_new_path)
                     ],
-                    "Delete": self.handle_delete_path
+                    "Delete": self.handle_delete_path,
+                    "space": self.handle_create_new_path
                 }
             }
 
@@ -233,10 +235,6 @@ class HandwritingShiftModifyer(tk.Frame):
         self.root.title("Handwriting manager")
         self.pack(fill=tk.BOTH, expand=1)
 
-        self.focus_entry = tk.Entry(self.root)
-        self.focus_entry.pack()
-        self.focus_entry.pack_forget()
-
         self.put_objects_on_grid(*self.create_ui_grid(self))
 
         self.bind_window_events(self.create_events_dict())
@@ -315,6 +313,7 @@ class HandwritingShiftModifyer(tk.Frame):
 
     def handle_enter_on_path(self, event):
         self.open_selected_file()
+        self.root.focus()
 
     def save_selected_file(self):
         if self.dictionary_groups is not None:
@@ -405,10 +404,11 @@ class HandwritingShiftModifyer(tk.Frame):
             return
 
         self.update_menu_names()
-        self.focus_entry.focus()
+        self.root.focus()
 
     def handle_draw_path(self, event):
         self.update_current_path()
+        self.root.focus()
 
     def handle_edit_letter(self, event):
         """Sets new path instead of current chosen letter"""
