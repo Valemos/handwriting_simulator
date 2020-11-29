@@ -72,6 +72,7 @@ class SignatureDictionary:
     composite key
     """
 
+    default_path = Path('signature.dict')
     dictionary_suffix = '.dict'
 
     def __init__(self, name='', path_groups: list = None):

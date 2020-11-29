@@ -1,5 +1,5 @@
 from pathlib import Path
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 
 from handwriting.path_management.signature_dictionary import SignatureDictionary
 
@@ -18,8 +18,12 @@ class DictionaryManager:
         return dct, it
 
     @staticmethod
-    def get_dictionary_file_path(field, path_str=None):
-        file_path = Path(path_str) if path_str is not None else Path(field.get())
+    def get_dictionary_file_path(path_str=None):
+        if path_str is not None:
+            file_path = Path(path_str)
+        else:
+            file_path = filedialog.askopenfilename()
+            file_path = Path(file_path) if file_path != '' else SignatureDictionary.default_path
 
         sfx = SignatureDictionary.dictionary_suffix
         if file_path.suffix != sfx:
@@ -30,6 +34,5 @@ class DictionaryManager:
             file_path.touch()
             messagebox.showinfo('Message', 'Created new file\n' + str(file_path))
 
-        field.set(str(file_path))
         return file_path
 

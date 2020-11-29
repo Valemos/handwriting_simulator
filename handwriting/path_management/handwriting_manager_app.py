@@ -1,6 +1,7 @@
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox
+from tkinter import filedialog
 
 from PIL import Image
 from PIL.ImageTk import PhotoImage
@@ -12,15 +13,15 @@ from handwriting.path_management.dictionary_manager import DictionaryManager
 from handwriting.grid_manager import GridManager
 from handwriting.event_handler import EventManager
 from handwriting.option_menu_manager import OptionMenuManager
-from handwriting.path_management.signature_dictionary import SignatureDictionary
 from handwriting.tkinter_shortcuts import *
 
 
 class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventManager, OptionMenuManager):
-    default_background_path = '../../default_bg.gif'
+    default_background_path = Path('default_bg.gif')
     not_selected = '-'
 
     def __init__(self, root):
+        root.geometry("510x650")
         tk.Frame.__init__(self, root)
         self.root = root
 
@@ -28,10 +29,9 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         self.brush_color = "black"
 
         # dictionary of path groups with default value
-        self.dictionary_groups = SignatureDictionary("signature")
-
+        self.dictionary_groups = None
         # iterator inside dictionary through all groups and path variants
-        self.paths_iterator = self.dictionary_groups.get_iterator()
+        self.paths_iterator = None
 
         # current path from self.paths_iterator
         self.current_path: HandwrittenPath = None
@@ -44,9 +44,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         self.setup_UI()
         self.reset_canvas()
 
-        # setup default file path after UI created
-        self.field_file_path.set(self.dictionary_groups.get_save_path())
-        self.handle_path_entry_update()
+        self.update_menu_names()
 
     def create_events_dict(self):
         return \
@@ -202,8 +200,8 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
                 ),
                 image=self.background_image)
 
-        elif Path(self.default_background_path).exists():
-            image = Image.open(Path(self.default_background_path)) \
+        elif self.default_background_path.exists():
+            image = Image.open(self.default_background_path) \
                 .resize((int(self.canvas['width']), int(self.canvas['height'])))
             self.background_image = PhotoImage(image)
             self.update_background_image()
@@ -427,13 +425,17 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
                 if path is not None else
                 self.not_selected
             )
+        else:
+            self.field_group.set(self.not_selected)
+            self.field_path_variant.set(self.not_selected)
 
     # working with dictionary file
     def handle_path_entry_update(self, event=None):
         self.root.focus()
 
-        self.dictionary_groups, self.paths_iterator = \
-            self.open_dictionary_file(self.get_dictionary_file_path(self.field_file_path))
+        dict_file = self.get_dictionary_file_path(self.field_file_path.get())
+        self.field_file_path.set(str(dict_file))
+        self.dictionary_groups, self.paths_iterator = self.open_dictionary_file(dict_file)
 
         self.update_menu_groups()
         self.reset_current_group()
@@ -460,7 +462,6 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
 
 def main():
     root = tk.Tk()
-    root.geometry("510x650")
     app = HandwritingShiftModifyer(root)
     root.mainloop()
 
