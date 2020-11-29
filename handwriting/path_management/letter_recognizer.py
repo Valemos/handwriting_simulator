@@ -1,7 +1,7 @@
 #%% Import cell
 import numpy as np
 from pathlib import Path
-import path_manager as pm
+from handwriting.page_writing import path_manager as pm
 from memory_limiter import limit_memory
 
 limit_memory(1000)

@@ -1,13 +1,11 @@
 import io
-import os
 import unittest
 from unittest.mock import patch
 from pathlib import Path
 import copy
 
-from handwriting.path_group import PathGroup
-from handwriting.handwritten_path import HandwrittenPath, Curve, Point
-from handwriting.signature_dictionary import SignatureDictionary
+from handwriting.path_management.handwritten_path import HandwrittenPath, Curve, Point
+from handwriting.path_management.signature_dictionary import SignatureDictionary
 
 abs_points = [Point(*elem) for elem in [(15, 15), (20, 15), (30, 40), (80, 60)]]
 test_path = HandwrittenPath('hello',
@@ -96,7 +94,7 @@ class TestDictionary(unittest.TestCase):
         it = obj.get_iterator()
 
         for i in range(100):
-            print(it.cur_group, it.cur_variant)
+            print(it.group_iter, it.variant_iter)
             it.prev()
 
 if __name__ == '__main__':

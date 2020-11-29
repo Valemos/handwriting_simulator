@@ -1,8 +1,8 @@
 #%% First cell
 
 from pathlib import Path
-from handwriting.handwritten_path import HandwrittenPath
-import path_manager as pm
+from handwriting.path_management.handwritten_path import HandwrittenPath
+from handwriting.page_writing import path_manager as pm
 import random as rnd
 from memory_limiter import limit_memory
 

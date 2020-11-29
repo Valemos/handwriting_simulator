@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw
 import numpy as np
-from handwriting.handwritten_path import HandwrittenPath
+from handwriting.path_management.handwritten_path import HandwrittenPath
 
 
 

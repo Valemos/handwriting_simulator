@@ -1,7 +1,7 @@
 import pickle
 
-from handwriting.point import Point
-from handwriting.stream_savable import StreamSavable
+from handwriting.path_management.point import Point
+from handwriting.path_management.stream_savable import StreamSavable
 
 
 class CurveIterator:

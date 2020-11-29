@@ -1,66 +1,67 @@
 from pathlib import Path
 
-from handwriting.handwritten_path import HandwrittenPath
-from handwriting.path_group import PathGroup
+from handwriting.path_management.handwritten_path import HandwrittenPath
+from handwriting.path_management.path_group import PathGroup
 
 from handwriting.step_functions import *
+from handwriting.updateable_iterator import UpdateableIterator, EmptyIterator
 
 class SignatureDictionaryPathsIterator:
 
-    def __init__(self, obj):
-        self.obj = obj
-        self.cur_group = 0
-        self.cur_variant = 0
+    def __init__(self, dictionary):
+        self.dictionary = dictionary
+        self.group_iter = UpdateableIterator(self.dictionary.path_groups)
+        self._update_variant()
+
+    def _update_variant(self):
+        if self.group_iter.current() is not None:
+            self.variant_iter = self.group_iter.current().get_iterator()
+        else:
+            self.variant_iter = EmptyIterator()
 
     def next(self) -> HandwrittenPath:
-        """Iterates step forwards and returns current element"""
-        if len(self.obj) == 0:
-            return None
+        """Iterates one step forward"""
 
-        self.cur_variant = step_forwards(self.cur_variant, len(self.obj[self.cur_group]) - 1)
-        if self.cur_variant == 0:
-            self.cur_group = step_forwards(self.cur_group, len(self.obj) - 1)
+        self.variant_iter.next()
+        if self.variant_iter.object_index == 0:
+            # iterator jumped to next loop
+            self.group_iter.next()
+            self._update_variant()
 
     def prev(self) -> HandwrittenPath:
         """Iterates step backwards and returns current element"""
-        if len(self.obj) == 0:
-            return None
 
-        mx = len(self.obj[self.cur_group]) - 1
-        self.cur_variant = step_backwards(self.cur_variant, mx)
-        if self.cur_variant == mx:
-            self.cur_group = step_backwards(self.cur_group, len(self.obj) - 1)
-            # by this moment group has changed and we need to correct current variant
-            self.cur_variant = len(self.obj[self.cur_group]) - 1
+        self.variant_iter.prev()
+        if self.variant_iter.object_index == self.variant_iter.get_max():
+            # iterator jumped to next loop
+            self.group_iter.prev()
+            self._update_variant()
 
     def current(self) -> HandwrittenPath:
-        if 0 <= self.cur_group < len(self.obj):
-            if 0 <= self.cur_variant < len(self.obj[self.cur_group]):
-                return self.obj[self.cur_group][self.cur_variant]
-        return None
+        return self.variant_iter.current()
 
     def current_group(self) -> PathGroup:
-        if 0 <= self.cur_group < len(self.obj):
-            return self.obj[self.cur_group]
-        return None
+        return self.group_iter.current()
 
     def select(self, group_i: int, variant_i: int = None):
         """Assignes indices according to arguments if they are in allowed range"""
-        if 0 <= group_i < len(self.obj):
-            self.cur_group = group_i
-            if variant_i is None:
-                self.cur_variant = 0
-            elif 0 <= variant_i < len(self.obj[group_i]):
-                self.cur_variant = variant_i
+        self.group_iter.select(group_i)
+        self._update_variant()
+        self.variant_iter.select(variant_i if variant_i is not None else 0)
 
     def delete_group(self):
-        if 0 <= self.cur_group < len(self.obj):
-            self.cur_group = self.obj.remove_group(self.cur_group)
+        if self.group_iter.current() is not None:
+            idx = self.dictionary.remove_group(self.group_iter.object_index)
+            self.group_iter.select(idx)
+            self._update_variant()
 
     def delete_current(self):
-        if 0 <= self.cur_group < len(self.obj):
-            if 0 <= self.cur_variant < len(self.obj[self.cur_group]):
-                self.cur_group, self.cur_variant = self.obj.remove_variant(self.cur_group, self.cur_variant)
+        if self.group_iter.current() is not None:
+            if self.variant_iter.current() is not None:
+                idx = self.dictionary.remove_variant(self.group_iter.object_index, self.variant_iter.object_index)
+                self.group_iter.select(idx[0])
+                self._update_variant()
+                self.variant_iter.select(idx[1])
 
 
 class SignatureDictionary:
@@ -83,25 +84,25 @@ class SignatureDictionary:
         self.name = name
 
         # dictionary holds indices of path_groups list
-        self._path_groups = path_groups if path_groups is not None else []
+        self.path_groups = path_groups if path_groups is not None else []
 
     def __len__(self):
-        return len(self._path_groups)
+        return len(self.path_groups)
 
     def __str__(self):
-        return f"{self.name}: {len(self._path_groups)}"
+        return f"{self.name}: {len(self.path_groups)}"
 
     def __getitem__(self, group_i):
-        return self._path_groups[group_i]
+        return self.path_groups[group_i]
 
     def __contains__(self, item):
-        return item in self._path_groups
+        return item in self.path_groups
 
     def __eq__(self, other):
-        return all(map(lambda x, y: x == y, self._path_groups, other._path_groups))
+        return all(map(lambda x, y: x == y, self.path_groups, other.path_groups))
 
     def __iter__(self):
-        return iter(self._path_groups)
+        return iter(self.path_groups)
 
     def get_iterator(self):
         """Returns bidirectional iterator for path groups and their variants"""
@@ -116,7 +117,7 @@ class SignatureDictionary:
     def save_file(self, file_name: Path = None):
         file_name = self.get_save_path(file_name)
         with file_name.open('wb+') as fout:
-            for group in self._path_groups:
+            for group in self.path_groups:
                 group.write_to_stream(fout)
 
     def remove_group(self, group_i):
@@ -125,9 +126,9 @@ class SignatureDictionary:
         :return: new group index
         """
 
-        if 0 <= group_i < len(self._path_groups):
-            self._path_groups.pop(group_i)
-            return group_i % len(self._path_groups) if len(self._path_groups) > 0 else 0
+        if 0 <= group_i < len(self.path_groups):
+            self.path_groups.pop(group_i)
+            return group_i % len(self.path_groups) if len(self.path_groups) > 0 else 0
         return 0
 
     def remove_variant(self, group_i, variant_i):
@@ -141,8 +142,8 @@ class SignatureDictionary:
         :return: returns new indices to replace previous deleted indices
         """
 
-        if 0 <= group_i < len(self._path_groups):
-            group = self._path_groups[group_i]
+        if 0 <= group_i < len(self.path_groups):
+            group = self.path_groups[group_i]
             if 0 <= variant_i < len(group):
                 group.remove_by_index(variant_i)
                 return group_i, variant_i % len(group) if len(group) > 0 else 0
@@ -166,10 +167,10 @@ class SignatureDictionary:
             return None
 
     def append_group(self, path_group):
-        self._path_groups.append(path_group)
+        self.path_groups.append(path_group)
 
     def append_path(self, group_index, path):
-        if 0 <= group_index < len(self._path_groups):
-            self._path_groups[group_index].append_path(path)
+        if 0 <= group_index < len(self.path_groups):
+            self.path_groups[group_index].append_path(path)
         else:
             raise ValueError('group index invalid')

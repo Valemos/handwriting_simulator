@@ -1,10 +1,10 @@
 from pathlib import Path
 import pickle
-from handwriting.handwritten_path import HandwrittenPath
-from handwriting.curve import Curve
-from handwriting.path_group import PathGroup
-from handwriting.point import Point
-from handwriting.signature_dictionary import SignatureDictionary
+from handwriting.path_management.handwritten_path import HandwrittenPath
+from handwriting.path_management.curve import Curve
+from handwriting.path_management.path_group import PathGroup
+from handwriting.path_management.point import Point
+from handwriting.path_management.signature_dictionary import SignatureDictionary
 
 input_files = list(Path("../letters/").glob("*.dat"))
 

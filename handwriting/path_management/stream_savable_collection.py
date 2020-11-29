@@ -1,7 +1,7 @@
 from abc import ABC
 
-from handwriting.savable_name import SavableName
-from handwriting.stream_savable import StreamSavable
+from handwriting.path_management.savable_name import SavableName
+from handwriting.path_management.stream_savable import StreamSavable
 
 
 class StreamSavableCollection(StreamSavable, SavableName, ABC):

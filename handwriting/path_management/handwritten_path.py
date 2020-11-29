@@ -1,10 +1,8 @@
-import io
-
-from handwriting.curve import Point, Curve
-from handwriting.stream_savable_collection import StreamSavableCollection
+from handwriting.path_management.curve import Point, Curve
+from handwriting.path_management.stream_savable_collection import StreamSavableCollection
 
 
-class HandwrittenPathIterator:
+class HandwrittenPathLinesIterator:
     """
     this class returns pairs of points to properly draw lines on canvas
     """
@@ -60,7 +58,6 @@ class HandwrittenPath(StreamSavableCollection):
     which represent separate sets of shifts
     """
 
-
     child_class = Curve
 
     def __init__(self, name, curves: list = None):
@@ -75,7 +72,7 @@ class HandwrittenPath(StreamSavableCollection):
         This iterator changes last_absolute_point values inside Curves according to new object position
         :return: iterator
         """
-        return HandwrittenPathIterator(self)
+        return HandwrittenPathLinesIterator(self)
 
     def __getitem__(self, i):
         return self.components[i]
