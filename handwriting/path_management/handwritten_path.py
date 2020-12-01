@@ -142,4 +142,4 @@ class HandwrittenPath(StreamSavableCollection):
         return HandwrittenPath.stream_read_str(stream)
 
     def write_name(self, stream):
-        HandwrittenPath.stream_write_str(self.name, stream)
+        HandwrittenPath.stream_write_str(stream, self.name)

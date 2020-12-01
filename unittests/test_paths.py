@@ -1,11 +1,13 @@
+import copy
 import io
 import unittest
-from unittest.mock import patch
-from pathlib import Path
-import copy
 
-from handwriting.path_management.handwritten_path import HandwrittenPath, Curve, Point
-from handwriting.path_management.signature_dictionary import SignatureDictionary
+import sys
+sys.path.append(r"D:\coding\Python_codes\Handwriting_extractor_project")
+
+from handwriting.path_management.curve import Curve
+from handwriting.path_management.handwritten_path import HandwrittenPath
+from handwriting.path_management.point import Point
 
 abs_points = [Point(*elem) for elem in [(15, 15), (20, 15), (30, 40), (80, 60)]]
 test_path = HandwrittenPath('hello',
@@ -13,35 +15,6 @@ test_path = HandwrittenPath('hello',
                                 Curve([Point(1, 10), Point(1, 10), Point(1, 10), Point(1, 10)]),
                                 Curve([Point(10, 100), Point(10, 100)])
                             ])
-
-# class TestRemoveIndex(unittest.TestCase):
-#
-#     def test_remove_index(self):
-#         test_path = Path("my_letters/а.hndw")
-#         temp = Path("temp.hndw")
-#
-#         with test_path.open("rb") as fin, temp.open("wb+") as fout:
-#             fout.write(fin.read())
-#
-#         group = PathGroup.from_file(temp)
-#
-#         group.remove_by_index(3)
-#
-#         other = PathGroup.from_file(temp)
-#         self.assertEqual(group, other)
-#
-#         os.remove(temp)
-
-
-class TestConvertCurve(unittest.TestCase):
-
-    def test_path_to_bytes(self):
-        a = copy.deepcopy(test_path)
-        bt = a.get_bytes()
-
-        b = HandwrittenPath.read_next(io.BytesIO(bt))
-        self.assertEqual(a, b)
-
 
 class TestPath(unittest.TestCase):
 
@@ -83,19 +56,16 @@ class TestShiftPosition(unittest.TestCase):
 
         index = 0
         for abs_point in cr:
-            self.assertEqual(abs_point, abs_points[index])
+            print(abs_point, abs_points[index])
             index += 1
 
-class TestDictionary(unittest.TestCase):
 
-    @patch("handwriting.signature_dictionary.SignatureDictionaryPathsIterator.current")
-    def test_dict_iterator(self, *mocks):
-        obj = SignatureDictionary.from_file(Path('paths_format_transition/anton_test.dict'))
-        it = obj.get_iterator()
+class TestConvertCurve(unittest.TestCase):
 
-        for i in range(100):
-            print(it.group_iter, it.variant_iter)
-            it.prev()
+    def test_path_to_bytes(self):
+        a = copy.deepcopy(test_path)
+        bt = a.get_bytes()
 
-if __name__ == '__main__':
-    unittest.main()
+        b = HandwrittenPath.read_next(io.BytesIO(bt))
+        self.assertEqual(a, b)
+

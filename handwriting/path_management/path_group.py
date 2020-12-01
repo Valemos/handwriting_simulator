@@ -45,7 +45,7 @@ class PathGroup(StreamSavableCollection):
         return PathGroup.stream_read_str(stream)
 
     def write_name(self, stream):
-        PathGroup.stream_write_str(self.name, stream)
+        PathGroup.stream_write_str(stream, self.name)
 
     def append_path(self, another_path: HandwrittenPath):
         """

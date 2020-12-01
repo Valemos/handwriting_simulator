@@ -14,7 +14,12 @@ from handwriting.path_management.dictionary_manager import DictionaryManager
 from handwriting.path_management.signature_dictionary import SignatureDictionary
 
 
-class PageTextWriterApp(tk.Frame, DictionaryManager, CanvasObjectsManager, GridManager, EventManager, OptionMenuManager):
+class PageTextWriterApp(tk.Frame,
+                        DictionaryManager,
+                        CanvasObjectsManager,
+                        GridManager,
+                        EventManager,
+                        OptionMenuManager):
 
     msg_not_selected = '-'
     default_pages_directory = Path("pages")
@@ -274,7 +279,7 @@ class PageTextWriterApp(tk.Frame, DictionaryManager, CanvasObjectsManager, GridM
     def handle_rename_page(self):
         """Renames current selected page"""
         if self.pages_iterator.current() is not None:
-            self.pages_iterator.current().name = askstring("Rename", "Enter new page name")
+            self.pages_iterator.current().set_name(askstring("Rename", "Enter new page name"))
             self.update_page_name()
 
 def main():

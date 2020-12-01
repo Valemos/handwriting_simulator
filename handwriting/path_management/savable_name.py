@@ -1,7 +1,9 @@
 from abc import ABC
 
+from handwriting.length_object_serializer import LengthObjectSerializer
 
-class SavableName(ABC):
+
+class SavableName(ABC, LengthObjectSerializer):
     @staticmethod
     def read_name(stream):
         """
@@ -25,15 +27,14 @@ class SavableName(ABC):
 
 
     @staticmethod
-    def stream_write_str(name, stream):
+    def stream_write_str(stream, name):
         """
         Writes name length and name itself to byte stream
         :param name: name string with no more than 128 characters
         :param stream: output byte stream
         """
         name_bytes = name[:128].encode('utf-8')
-        stream.write(len(name_bytes).to_bytes(1, 'big'))
-        stream.write(name_bytes)
+        LengthObjectSerializer.write_length_object(stream, name_bytes, 1)
 
     @staticmethod
     def stream_read_str(stream):
@@ -43,9 +44,5 @@ class SavableName(ABC):
         :param stream: input byte stream
         :return: string object on top of stream
         """
-        # if byte_stream does not contain any bytes, name_len equals to 0
-        name_len = int.from_bytes(stream.read(1), 'big')
-
-        # if name_len is zero, than empty string '' will be returned
-        return (stream.read(name_len)).decode('utf-8')
+        return LengthObjectSerializer.read_length_object(stream, 1).decode('utf-8')
 
