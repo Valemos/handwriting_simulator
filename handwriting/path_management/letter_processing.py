@@ -68,7 +68,7 @@ class TextWriter:
 
 if __name__ == '__main__':
 
-    # print text to image    
+    # print text to image_initial
     
     limit_memory(1200)
     

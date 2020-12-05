@@ -19,7 +19,7 @@ class TestPageLoading(unittest.TestCase):
 
         new_page = Page.from_file(test_page.save_path)
 
-        self.assertEqual(test_page.image, new_page.image)
+        self.assertEqual(test_page.image_initial, new_page.image_initial)
         self.assertEqual(test_page.name, new_page.name)
         self.assertEqual(test_page.save_path, new_page.save_path)
 

@@ -17,7 +17,7 @@ class CurveIterator:
         # to correctly continue iterations relative to last curve
         self.cur_point = initial_shift if initial_shift is not None else Point(0, 0)
 
-        # cannot use list iterator because it will not update if container was changed
+        # cannot use list pages_iterator because it will not update if container was changed
         self.shift_index = 0
 
     def __next__(self):

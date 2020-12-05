@@ -2,7 +2,7 @@ from pathlib import Path
 
 from handwriting.path_management.stream_savable_collection import StreamSavableCollection
 from handwriting.path_management.handwritten_path import HandwrittenPath
-from handwriting.updateable_iterator import UpdateableIterator
+from handwriting.cyclic_iterator import CyclicIterator
 
 class PathGroup(StreamSavableCollection):
     """contains several versions of the same handwritten path"""
@@ -32,7 +32,7 @@ class PathGroup(StreamSavableCollection):
         return len(self.components)
 
     def get_iterator(self):
-        return UpdateableIterator(self.components)
+        return CyclicIterator(self.components)
 
     def initialize_save_path(self, save_file=None):
         if save_file is None:

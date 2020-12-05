@@ -14,7 +14,7 @@ class Point:
         return self.x == other.x and self.y == other.y
 
     def __iter__(self):
-        return (self.__dict__[item] for item in self.__dict__)
+        return (i for i in (self.x, self.y))
 
     def get_shift(self, prev):
         """Returns Point which was added to previous point to get this one"""

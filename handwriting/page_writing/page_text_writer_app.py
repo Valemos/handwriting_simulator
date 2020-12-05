@@ -3,13 +3,16 @@ from math import sqrt
 from tkinter import filedialog
 from tkinter.simpledialog import askstring
 from pathlib import Path
+import random
 
+from PIL import ImageDraw
+from PIL.ImageTk import PhotoImage
 
 from handwriting.canvas_objects_manager import CanvasObjectsManager
 from handwriting.event_handler import EventManager
 from handwriting.grid_manager import GridManager
 from handwriting.option_menu_manager import OptionMenuManager
-from handwriting.page_writing.page_text_manager import PageManager
+from handwriting.page_writing.page_manager import PageManager
 from handwriting.path_management.dictionary_manager import DictionaryManager
 from handwriting.path_management.signature_dictionary import SignatureDictionary
 
@@ -33,7 +36,6 @@ class PageTextWriterApp(tk.Frame,
 
         self.letters_dictionary = None
         self.pages_manager = PageManager()
-        self.pages_iterator = self.pages_manager.get_iterator()
 
         self.text_image = None
 
@@ -129,16 +131,22 @@ class PageTextWriterApp(tk.Frame,
         btn_open_dict = tk.Button(root, text="Open dictionary", width=grid_width,
                                   command=self.open_dictionary)
 
-        btn_open_pages = tk.Button(root, text="Open images", width=grid_width,
+        btn_open_pages = tk.Button(root, text="Open pages", width=grid_width,
                                    command=self.open_pages_directory)
+
+        btn_pages_from_images = tk.Button(root, text="Images to pages", width=grid_width,
+                                          command=self.open_images_to_pages)
+
+        btn_save_pages = tk.Button(root, text="Save pages", width=grid_width,
+                                   command=self.save_pages_to_files)
 
         # arrange table
         widgets_table_rows = [
             [None,              label_space_sz,         entry_space_sz,     field_points_str],
             [label_dict_path,   self.entry_dict_path,   btn_open_dict],
             [label_pages_dir,   self.entry_pages_dir,   self.menu_pages,    frame_page_controls],
-            [None,              btn_open_pages,         btn_rename_page,    btn_remove_page],
-            [None,              None,                   btn_reset_text,    btn_draw_text],
+            [btn_save_pages,    btn_open_pages,         btn_rename_page,    btn_remove_page],
+            [None,              btn_pages_from_images,  btn_reset_text,    btn_draw_text],
             [(self.entry_draw_text, {"columnspan": 4})]
         ]
 
@@ -211,9 +219,20 @@ class PageTextWriterApp(tk.Frame,
     def open_pages_directory(self, path=None):
         file_path = self.get_pages_directory(path)
         self.field_pages_dir.set(str(file_path))
-        self.update_page_images(file_path)
+        self.update_pages(file_path)
         self.update_current_page()
         self.update_page_name()
+
+    def open_images_to_pages(self, path=None):
+        file_path = self.get_pages_directory(path)
+        self.field_pages_dir.set(str(file_path))
+        self.read_images_to_pages(file_path)
+        self.update_current_page()
+        self.update_page_name()
+
+    def save_pages_to_files(self):
+        for page in self.pages_manager.pages:
+            page.save_file()
 
     def handle_reset_text(self):
         pass
@@ -228,32 +247,38 @@ class PageTextWriterApp(tk.Frame,
         self.points_draw_objects.extend(lst)
 
     def handle_delete_page(self, event=None):
-        if self.pages_iterator.current() is not None:
-            self.pages_manager.pages.pop(self.pages_iterator.object_index)
-            self.pages_iterator.prev()
+        self.pages_manager.delete_current_page()
+        self.update_current_page()
+        self.update_page_name()
 
     def handle_page_chosen(self, choice):
-        self.pages_iterator.select(choice)
+        self.pages_manager.select_page(choice)
         self.update_current_page()
         self.update_page_name()
 
     def handle_next_page(self, event=None):
-        self.pages_iterator.next()
+        self.pages_manager.next_page()
         self.update_current_page()
         self.update_page_name()
 
     def handle_prev_page(self, event=None):
-        self.pages_iterator.prev()
+        self.pages_manager.previous_page()
         self.update_current_page()
         self.update_page_name()
 
     def update_current_page(self):
-        if self.pages_iterator.current() is not None:
-            self.reset_canvas()
-            self.canvas.create_image((0, 0), anchor=tk.NW, image=self.pages_iterator.current().image)
+        self.reset_canvas()
+        if self.pages_manager.current_page() is not None:
+            self.current_page_image = PhotoImage(
+                self.pages_manager.current_page().current_image.resize((
+                    self.canvas.winfo_width(),
+                    self.canvas.winfo_height()
+                ))
+            )
+            self.canvas.create_image((0, 0), anchor=tk.NW, image=self.current_page_image)
 
     def update_pages_menu(self):
-        """Sets image names and their indices as menu options"""
+        """Sets image_initial names and their indices as menu options"""
 
         choices = None
         if len(self.pages_manager.pages) > 0:
@@ -262,24 +287,48 @@ class PageTextWriterApp(tk.Frame,
         self.set_menu_choices(self.menu_pages, choices, self.handle_page_chosen)
 
     def update_page_name(self):
-        if self.pages_iterator.current() is not None:
-            self.var_page_name.set(self.pages_iterator.current().name)
+        if self.pages_manager.current_page() is not None:
+            self.var_page_name.set(self.pages_manager.current_page().name)
         else:
             self.var_page_name.set(self.msg_not_selected)
 
     def handle_draw_text(self):
         """Draws text on current page"""
-        pass
 
-    def update_page_images(self, file_path):
+        self.pages_manager.current_page().create_text_image()
+        self.draw_text_on_image(self.entry_draw_text.get(1.0, tk.END),
+                                self.pages_manager.current_page().current_image)
+        self.update_current_page()
+
+    def draw_text_on_image(self, text, image):
+        """uses reference to image and translates text to it"""
+        draw = ImageDraw.Draw(image)
+        for char in text:
+            path_group = self.letters_dictionary[char]
+            if path_group is not None:
+                path_index = random.randrange(0, len(path_group))
+
+                path = path_group[path_index]
+                # need to position properly
+                path.set_position(100, 100)
+                for point_pair in path:
+                    draw.line(*point_pair[0], *point_pair[1], fill=128)
+
+
+    def update_pages(self, file_path):
         self.pages_manager.pages = []
         self.pages_manager.read_pages_from_dir(file_path)
-        self.pages_iterator = self.pages_manager.get_iterator()
+
+    def read_images_to_pages(self, file_path):
+        self.pages_manager.pages = []
+        self.pages_manager.read_images_to_pages(file_path)
+        self.update_current_page()
+        self.update_page_name()
 
     def handle_rename_page(self):
         """Renames current selected page"""
-        if self.pages_iterator.current() is not None:
-            self.pages_iterator.current().set_name(askstring("Rename", "Enter new page name"))
+        if self.pages_manager.current_page() is not None:
+            self.pages_manager.current_page().set_name(askstring("Rename", "Enter new page name"))
             self.update_page_name()
 
 def main():

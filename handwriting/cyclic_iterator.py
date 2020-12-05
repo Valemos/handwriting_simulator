@@ -1,8 +1,11 @@
 from handwriting.step_functions import *
 
-class UpdateableIterator:
+
+class CyclicIterator:
     """
     This class controls mechanisms of selecting and iterating in list of images back and forth
+    if user iterates outside of bounds,
+    iterator returns to first or last element of list to iterate in cycle
     """
 
     def __init__(self, object_list):
@@ -34,7 +37,7 @@ class UpdateableIterator:
         return None
 
 
-class EmptyIterator(UpdateableIterator):
+class EmptyIterator(CyclicIterator):
 
     def __init__(self):
         super().__init__(None)

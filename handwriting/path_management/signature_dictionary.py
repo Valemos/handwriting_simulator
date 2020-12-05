@@ -4,13 +4,13 @@ from handwriting.path_management.handwritten_path import HandwrittenPath
 from handwriting.path_management.path_group import PathGroup
 
 from handwriting.step_functions import *
-from handwriting.updateable_iterator import UpdateableIterator, EmptyIterator
+from handwriting.cyclic_iterator import CyclicIterator, EmptyIterator
 
 class SignatureDictionaryPathsIterator:
 
     def __init__(self, dictionary):
         self.dictionary = dictionary
-        self.group_iter = UpdateableIterator(self.dictionary.path_groups)
+        self.group_iter = CyclicIterator(self.dictionary.path_groups)
         self._update_variant()
 
     def _update_variant(self):
@@ -24,7 +24,7 @@ class SignatureDictionaryPathsIterator:
 
         self.variant_iter.next()
         if self.variant_iter.object_index == 0:
-            # iterator jumped to next loop
+            # pages_iterator jumped to next loop
             self.group_iter.next()
             self._update_variant()
 
@@ -33,7 +33,7 @@ class SignatureDictionaryPathsIterator:
 
         self.variant_iter.prev()
         if self.variant_iter.object_index == self.variant_iter.get_max():
-            # iterator jumped to next loop
+            # pages_iterator jumped to next loop
             self.group_iter.prev()
             self._update_variant()
 
@@ -86,6 +86,7 @@ class SignatureDictionary:
 
         # dictionary holds indices of path_groups list
         self.path_groups = path_groups if path_groups is not None else []
+        self.groups_dict = {group.name: group for group in self.path_groups}
 
     def __len__(self):
         return len(self.path_groups)
@@ -93,8 +94,12 @@ class SignatureDictionary:
     def __str__(self):
         return f"{self.name}: {len(self.path_groups)}"
 
-    def __getitem__(self, group_i):
-        return self.path_groups[group_i]
+    def __getitem__(self, group_name):
+        if group_name in self.groups_dict:
+            return self.groups_dict[group_name]
+        else:
+            print("Error, cannot find group")
+            return None
 
     def __contains__(self, item):
         return item in self.path_groups
@@ -106,7 +111,7 @@ class SignatureDictionary:
         return iter(self.path_groups)
 
     def get_iterator(self):
-        """Returns bidirectional iterator for path groups and their variants"""
+        """Returns bidirectional pages_iterator for path groups and their variants"""
         return SignatureDictionaryPathsIterator(self)
 
     def get_save_path(self, file_name: Path = None):
@@ -128,6 +133,8 @@ class SignatureDictionary:
         """
 
         if 0 <= group_i < len(self.path_groups):
+            if self.path_groups[group_i].name in self.groups_dict:
+                del self.groups_dict[self.path_groups[group_i].name]
             self.path_groups.pop(group_i)
             return group_i % len(self.path_groups) if len(self.path_groups) > 0 else 0
         return 0
@@ -169,6 +176,7 @@ class SignatureDictionary:
 
     def append_group(self, path_group):
         self.path_groups.append(path_group)
+        self.groups_dict[path_group.name] = path_group
 
     def append_path(self, group_index, path):
         if 0 <= group_index < len(self.path_groups):

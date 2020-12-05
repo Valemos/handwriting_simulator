@@ -10,7 +10,7 @@ class HandwrittenPathLinesIterator:
     def __init__(self, obj):
         self.path = obj
 
-        # cannot use list iterator because it will not update on container change
+        # cannot use list pages_iterator because it will not update on container change
         self.curve_index = 0
         self.point_iterator = None
         self.cur_curve = None
@@ -30,7 +30,7 @@ class HandwrittenPathLinesIterator:
                 # move to next line
                 self.prev_point = self.cur_point
                 self.cur_point = next(self.point_iterator)
-            except StopIteration:  # if curve iterator stopped, than it is the last point
+            except StopIteration:  # if curve pages_iterator stopped, than it is the last point
 
                 # go one step forward in curves list
                 if self.curve_index < len(self.path) - 1:
@@ -69,8 +69,8 @@ class HandwrittenPath(StreamSavableCollection):
 
     def __iter__(self):
         """
-        This iterator changes last_absolute_point values inside Curves according to new object position
-        :return: iterator
+        This pages_iterator changes last_absolute_point values inside Curves according to new object position
+        :return: pages_iterator
         """
         return HandwrittenPathLinesIterator(self)
 

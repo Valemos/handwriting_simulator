@@ -30,12 +30,12 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
 
         # dictionary of path groups with default value
         self.dictionary_groups = None
-        # iterator inside dictionary through all groups and path variants
+        # pages_iterator inside dictionary through all groups and path variants
         self.paths_iterator = None
 
         # current path from self.paths_iterator
         self.current_path: HandwrittenPath = None
-        # iterator inside path to draw lines
+        # pages_iterator inside path to draw lines
         self.current_path_iterator: HandwrittenPathLinesIterator = None
 
         self._mouse_released = True
@@ -208,7 +208,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
 
     def handle_motion_draw(self, event):
         """
-        After new point is appended, iterator will be updated and will be able to give another line
+        After new point is appended, pages_iterator will be updated and will be able to give another line
         If this event begins new curve (mouse was previously released and now it was pressed)
         New_curve is created for path and first point is appended to it
 
@@ -238,9 +238,9 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
 
     def draw_iterator(self, path_iterator):
         """
-        Draws current path lines using HandwrittenPath iterator
+        Draws current path lines using HandwrittenPath pages_iterator
 
-        :param path_iterator: iterator for current path
+        :param path_iterator: pages_iterator for current path
         """
         while True:
             try:
@@ -276,7 +276,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         Function assumes, that self.paths_iterator is not None
 
         Updates current path variables and applies shift to new path
-        Draws current iterator lines
+        Draws current pages_iterator lines
 
         :param anchor_point: if anchor_point is not None,
                             updates absolute position of current path

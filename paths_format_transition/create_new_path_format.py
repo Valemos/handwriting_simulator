@@ -6,7 +6,7 @@ from handwriting.path_management.path_group import PathGroup
 from handwriting.path_management.point import Point
 from handwriting.path_management.signature_dictionary import SignatureDictionary
 
-input_files = list(Path("../letters/").glob("*.dat"))
+input_files = list(Path("../letters/").glob("*.dat"))[:3]
 
 output_folder = Path("../my_letters")
 
