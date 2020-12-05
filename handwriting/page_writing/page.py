@@ -49,7 +49,10 @@ class Page(LengthObjectSerializer):
         return save_path
 
     def set_name(self, name):
-        self.save_path = self.get_save_path(Path(name))
+        if self.save_path is not None:
+            self.save_path = self.save_path.with_name(name).with_suffix(Page.pages_data_suffix)
+        else:
+            self.save_path = self.get_save_path(Path(name))
         self.name = name
 
     def save_file(self):

@@ -98,7 +98,6 @@ class SignatureDictionary:
         if group_name in self.groups_dict:
             return self.groups_dict[group_name]
         else:
-            print("Error, cannot find group")
             return None
 
     def __contains__(self, item):

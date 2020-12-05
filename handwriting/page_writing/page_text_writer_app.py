@@ -14,7 +14,9 @@ from handwriting.grid_manager import GridManager
 from handwriting.option_menu_manager import OptionMenuManager
 from handwriting.page_writing.page_manager import PageManager
 from handwriting.path_management.dictionary_manager import DictionaryManager
+from handwriting.path_management.point import Point
 from handwriting.path_management.signature_dictionary import SignatureDictionary
+from handwriting.path_management.handwritten_path import HandwrittenPath
 
 
 class PageTextWriterApp(tk.Frame,
@@ -52,6 +54,12 @@ class PageTextWriterApp(tk.Frame,
         self.setup_UI()
         self.reset_canvas()
         self.update_pages_menu()
+
+        self.open_dictionary(r"D:\coding\Python_codes\Handwriting_extractor_project\paths_format_transition\anton.dict")
+        self.open_pages_directory(r"D:\coding\Python_codes\Handwriting_extractor_project\pages")
+        self.update_current_page()
+
+        self.entry_draw_text.insert(1.0, "прив")
 
         # allow to edit canvas after it was created
         CanvasObjectsManager.__init__(self)
@@ -144,9 +152,9 @@ class PageTextWriterApp(tk.Frame,
         widgets_table_rows = [
             [None,              label_space_sz,         entry_space_sz,     field_points_str],
             [label_dict_path,   self.entry_dict_path,   btn_open_dict],
-            [label_pages_dir,   self.entry_pages_dir,   self.menu_pages,    frame_page_controls],
-            [btn_save_pages,    btn_open_pages,         btn_rename_page,    btn_remove_page],
-            [None,              btn_pages_from_images,  btn_reset_text,    btn_draw_text],
+            [label_pages_dir,   self.entry_pages_dir,   btn_open_pages,     btn_pages_from_images],
+            [btn_rename_page,   self.menu_pages,        btn_remove_page],
+            [btn_save_pages,    frame_page_controls,    btn_reset_text,     btn_draw_text],
             [(self.entry_draw_text, {"columnspan": 4})]
         ]
 
@@ -221,6 +229,7 @@ class PageTextWriterApp(tk.Frame,
         self.field_pages_dir.set(str(file_path))
         self.update_pages(file_path)
         self.update_current_page()
+        self.update_pages_menu()
         self.update_page_name()
 
     def open_images_to_pages(self, path=None):
@@ -228,6 +237,7 @@ class PageTextWriterApp(tk.Frame,
         self.field_pages_dir.set(str(file_path))
         self.read_images_to_pages(file_path)
         self.update_current_page()
+        self.update_pages_menu()
         self.update_page_name()
 
     def save_pages_to_files(self):
@@ -235,7 +245,8 @@ class PageTextWriterApp(tk.Frame,
             page.save_file()
 
     def handle_reset_text(self):
-        pass
+        self.pages_manager.current_page().image_text = None
+        self.pages_manager.current_page().set_current_image_initial()
 
     def draw_point_scope(self, point, color):
         lst = []
@@ -249,6 +260,7 @@ class PageTextWriterApp(tk.Frame,
     def handle_delete_page(self, event=None):
         self.pages_manager.delete_current_page()
         self.update_current_page()
+        self.update_pages_menu()
         self.update_page_name()
 
     def handle_page_chosen(self, choice):
@@ -302,17 +314,26 @@ class PageTextWriterApp(tk.Frame,
 
     def draw_text_on_image(self, text, image):
         """uses reference to image and translates text to it"""
-        draw = ImageDraw.Draw(image)
+        if self.letters_dictionary is None:
+            return
+
+        # create path from letter paths
+        total_path_curves = []
         for char in text:
             path_group = self.letters_dictionary[char]
             if path_group is not None:
-                path_index = random.randrange(0, len(path_group))
+                path_index = random.randrange(0, len(path_group) - 1)
+                path_group[path_index].set_position(Point(0, 0))
+                total_path_curves.extend(path_group[path_index].components)
+            else:
+                print(f"char not found \"{char}\"")
 
-                path = path_group[path_index]
-                # need to position properly
-                path.set_position(100, 100)
-                for point_pair in path:
-                    draw.line(*point_pair[0], *point_pair[1], fill=128)
+        draw = ImageDraw.Draw(image)
+        total_path = HandwrittenPath("text", total_path_curves)
+        total_path.set_position(Point(100, 400))
+
+        for p1, p2 in total_path:
+            draw.line((*p1, *p2), fill=0, width=4)
 
 
     def update_pages(self, file_path):
@@ -323,13 +344,17 @@ class PageTextWriterApp(tk.Frame,
         self.pages_manager.pages = []
         self.pages_manager.read_images_to_pages(file_path)
         self.update_current_page()
+        self.update_pages_menu()
         self.update_page_name()
 
     def handle_rename_page(self):
         """Renames current selected page"""
         if self.pages_manager.current_page() is not None:
-            self.pages_manager.current_page().set_name(askstring("Rename", "Enter new page name"))
-            self.update_page_name()
+            new_name = askstring("Rename", "Enter new page name")
+            if new_name is not None:
+                self.pages_manager.current_page().set_name(new_name)
+                self.update_pages_menu()
+                self.update_page_name()
 
 def main():
     root = tk.Tk()
