@@ -18,13 +18,23 @@ class PageManager:
         self.pages_iterator = CyclicIterator(self.pages)
         self.anchor_manager: AnchorManager = None
 
-    def start_line_points_setup(self, canvas, draw_function):
+    def start_anchor_editing(self, canvas, draw_function):
         """
         For current page creates updateable iterators to use move functions
         and update or add anchor points
         """
         self.anchor_manager = AnchorManager(self.pages_iterator.current())
         self.anchor_manager.set_canvas_draw(canvas, draw_function)
+        self.anchor_manager.draw_all()
+
+    def stop_anchor_editing(self):
+        """Stops interaction with line points"""
+        if self.anchor_manager is None:
+            return
+
+        self.anchor_manager.save_page_points()
+        self.anchor_manager.delete_all_canvas_objects()
+        self.anchor_manager = None
 
     # manage pages
     def current_page(self) -> Page:

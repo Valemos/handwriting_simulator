@@ -8,57 +8,75 @@ class ExtendingIterator:
         self.object_list = object_list
         self.object_index = 0
 
-    def get_max(self):
+    def __contains__(self, i):
+        return 0 <= i < len(self.object_list)
+
+    def __getitem__(self, i):
+        return self.object_list[i]
+
+    def __setitem__(self, i, val):
+        self.object_list[i] = val
+
+    def __len__(self):
         return len(self.object_list)
 
+    def append(self, item):
+        self.object_list.append(item)
+
     def next(self):
-        if 0 <= self.object_index < len(self.object_list) - 1:
-            self.object_index += 1
+        if len(self) == 0:
+            self.object_list.append(None)
+            self.object_index = 0
         elif self.object_index == len(self.object_list) - 1:
             if self.object_list[-1] is not None:
                 self.object_list.append(None)
                 self.object_index += 1
+        elif self.object_index in self:
+            self.object_index += 1
         else:
             self.object_index = 0
 
     def prev(self):
-        if 0 < self.object_index < len(self.object_list):
-            self.object_index -= 1
+        if len(self) == 0:
+            self.object_list.append(None)
+            self.object_index = 0
         elif self.object_index == 0:
             if self.object_list[0] is not None:
                 self.object_list.insert(0, None)
+        elif self.object_index in self:
+            self.object_index -= 1
         else:
             self.object_index = 0
 
     def set_current(self, new_object):
-        if 0 <= self.object_index < len(self.object_list):
+        if self.object_index in self:
             self.object_list[self.object_index] = new_object
         else:
             self.object_list.append(new_object)
             self.object_index = len(self.object_list) - 1
 
     def select(self, index):
-        if 0 <= index < len(self.object_list):
+        if index in self:
             self.object_index = index
 
     def current(self):
-        if 0 <= self.object_index < len(self.object_list):
+        if self.object_index in self:
             return self.object_list[self.object_index]
         return None
 
     def delete_current(self):
-        if 0 <= self.object_index < len(self.object_list):
+        if self.object_index in self:
             self.object_list.pop(self.object_index)
             self.object_index = self.object_index - 1 if self.object_index > 0 else 0
-
 
     def check_cell_empty(self):
         """
         Returns True, if current index is inside bounds, but current object is None
         That means, that current object was moved using next() or prev()
         and list was extended with None object
-        :return: True if current object is None
+        :return: True if current object is None, or object list is empty, False otherwise
         """
 
-        if 0 <= self.object_index < len(self.object_list):
+        if self.object_index in self:
             return self.object_list[self.object_index] is None
+        return True

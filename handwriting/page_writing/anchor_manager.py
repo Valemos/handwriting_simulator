@@ -7,6 +7,10 @@ class AnchorManager:
     """
     Iterates through anchor points lists, updates their positions
     and manages Tkinter canvas draw objects
+
+    Anchor lines must be created as grid, where the top line used to guide letters? sitting on bottom line
+    Ideally, all anchor points must outline the shape of page,
+    defining required transformations to fit letters on this page
     """
 
     def __init__(self, page):
@@ -47,7 +51,9 @@ class AnchorManager:
         Draws all points on canvas
         stores canvas objects in internal map for future redraw updates of that point
         """
-        for row in self.page.lines_points:
+
+        self.delete_all_canvas_objects()
+        for row in self.line_iterator.object_list:
             for point in row:
                 if point is not None:
                     self.redraw_point(point)
@@ -63,6 +69,9 @@ class AnchorManager:
                 self.canvas.delete(obj)
             del self.canvas_objects[cur]
 
+    def delete_all_canvas_objects(self):
+        for point in list(self.canvas_objects.keys()):
+            self.delete_point_canvas_objects(point)
 
     def delete_point_canvas_objects(self, point: Point):
         for obj in self.canvas_objects[point]:
@@ -145,7 +154,6 @@ class AnchorManager:
                     self.delete_point_canvas_objects(cur_point)
                 self.line_iterator.current().delete_current()
 
-
     def update_current_point(self, point: Point):
         """
         Updates or creates new position on this position in iterators
@@ -168,3 +176,55 @@ class AnchorManager:
             if self.line_iterator.current() is not None:
                 return self.line_iterator.current().current()
         return None
+
+    # line modification
+    def add_intermediate_lines(self, top_index, bot_index, line_count):
+        """
+        Top line is taken as guide for letters from next line
+        Every next line uses previous line to guide letters in right way
+
+        :param top_index: index of top line to take points from
+        :param bot_index: index of bottom line to take points from
+        :param line_count: number of total lines to end up with
+        :return: True if lines were added, False otherwise
+        """
+
+        if self.line_iterator is None or top_index == bot_index:
+            return False
+
+        self.remove_empty_points(self.line_iterator[top_index])
+        self.remove_empty_points(self.line_iterator[bot_index])
+
+        if top_index not in self.line_iterator or bot_index not in self.line_iterator:
+            return False
+
+        if len(self.line_iterator[top_index]) > len(self.line_iterator[bot_index]):
+            return False
+
+        first_line = self.line_iterator[top_index]
+        last_line = self.line_iterator[bot_index]
+        for i in range(top_index + 1, top_index + line_count):
+            self.line_iterator.object_list.insert(i, ExtendingIterator([]))
+
+
+        for point_i in range(len(first_line)):
+            # create intermediate points
+            step_point = last_line[point_i].get_shift(first_line[point_i])
+            step_point.x /= line_count
+            step_point.y /= line_count
+            cur_point = Point(*first_line[point_i])
+            for row_iter in range(top_index + 1, top_index + line_count):
+                cur_point = cur_point.shift(step_point)
+                self.line_iterator[row_iter].append(cur_point)
+
+        self.draw_all()
+        return True
+
+    @staticmethod
+    def remove_empty_points(iterator: ExtendingIterator):
+        i = 0
+        while i < len(iterator):
+            if iterator[i] is None:
+                iterator.object_list.pop(i)
+            else:
+                i += 1

@@ -21,6 +21,3 @@ class CanvasObjectsManager:
             return self.canvas_objects.pop()
         else:
             return None
-
-    def clear_canvas_objects(self):
-        self.canvas_objects = []

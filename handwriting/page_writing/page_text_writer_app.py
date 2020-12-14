@@ -1,7 +1,7 @@
 import threading
 import tkinter as tk
 from math import sqrt
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from tkinter.simpledialog import askstring
 from pathlib import Path
 import random
@@ -21,6 +21,7 @@ from handwriting.path_management.signature_dictionary import SignatureDictionary
 from handwriting.path_management.handwritten_path import HandwrittenPath
 from handwriting.page_writing.anchor_points_handlers import AnchorPointsHandlers
 from handwriting.page_writing.page_button_handlers import PageButtonHandlers
+from handwriting.tkinter_shortcuts import update_integer_field
 
 
 class PageTextWriterApp(tk.Frame,
@@ -159,14 +160,25 @@ class PageTextWriterApp(tk.Frame,
         label_anchor_index = tk.Label(root, textvariable=self.var_anchor_index, width=grid_width)
         self.update_anchor_indices()
 
+        self.var_lines_count = tk.StringVar(root)
+        self.var_lines_count.set("0")
+        entry_lines_count = tk.Entry(root, width=grid_width, textvariable=self.var_lines_count)
+
+        label_create_lines = tk.Label(root, text="Create more lines:")
+
+        self.btn_create_lines = tk.Button(root, text="Create lines", width=grid_width,
+                                          command=self.handle_create_more_lines)
+        self.btn_create_lines.config(state=tk.DISABLED)
+
         # arrange table
         widgets_table_rows = [
-            [None,              label_space_sz,         entry_space_sz],
-            [label_dict_path,   self.entry_dict_path,   btn_open_dict],
-            [label_pages_dir,   self.entry_pages_dir,   btn_open_pages,     btn_pages_from_images],
-            [btn_rename_page,   self.menu_pages,        btn_remove_page,    btn_edit_page_anchors,  label_anchor_index],
-            [btn_save_pages,    frame_page_controls,    btn_reset_text,     btn_draw_text],
-            [(self.entry_draw_text, {"columnspan": 5})]
+            [label_dict_path,    self.entry_dict_path,  btn_open_dict],
+            [label_pages_dir,    self.entry_pages_dir,  btn_open_pages,         btn_pages_from_images],
+            [btn_rename_page,    self.menu_pages,       btn_remove_page,        btn_edit_page_anchors],
+            [btn_save_pages,     frame_page_controls,   btn_reset_text,         btn_draw_text],
+            [label_create_lines, entry_lines_count,     self.btn_create_lines],
+            [None,               label_space_sz,         entry_space_sz,        label_anchor_index],
+            [(self.entry_draw_text, {"columnspan": 4})]
         ]
 
         # if argument not specifyed explicitly, take it from global arguments
@@ -251,6 +263,7 @@ class PageTextWriterApp(tk.Frame,
         self.update_page_name()
 
     def save_pages_to_files(self):
+        self.disable_edit_anchor_points()
         for page in self.pages_manager.pages:
             page.save_file()
 
@@ -277,7 +290,7 @@ class PageTextWriterApp(tk.Frame,
 
     def handle_page_chosen(self, choice):
         if self.pages_manager.anchor_manager is not None:
-            self.pages_manager.anchor_manager.save_page_points()
+            self.disable_edit_anchor_points()
         self.pages_manager.select_page(choice)
         self.update_current_page()
         self.update_page_name()
@@ -290,24 +303,52 @@ class PageTextWriterApp(tk.Frame,
         """Selects set of handlers to move between anchor points on this page"""
         self.arrow_handlers = AnchorPointsHandlers
 
+    def enable_edit_anchor_points(self):
+        self.var_edit_page_anchors.set(self.name_btn_stop_edit_anchors)
+
+        # turn on button for line creation
+        self.btn_create_lines.config(state=tk.NORMAL)
+
+        self.select_anchor_point_handlers()
+
+        # start modifying page anchor points
+        self.pages_manager.start_anchor_editing(self.canvas, self.draw_point_scope)
+        self.update_anchor_indices()
+
+    def disable_edit_anchor_points(self):
+        self.var_edit_page_anchors.set(self.name_btn_edit_anchors)
+        # turn off button for line creation
+        self.btn_create_lines.config(state=tk.DISABLED)
+
+        self.select_page_switch_handlers()
+
+        self.pages_manager.stop_anchor_editing()
+        self.update_anchor_indices()
+
     def handle_edit_page_points(self, event=None):
         """Switches modes for button interaction"""
 
         if self.var_edit_page_anchors.get() == self.name_btn_edit_anchors:
-            self.select_anchor_point_handlers()
-            self.var_edit_page_anchors.set(self.name_btn_stop_edit_anchors)
-
-            # start modifying page anchor points
-            self.pages_manager.start_line_points_setup(self.canvas, self.draw_point_scope)
-            self.pages_manager.anchor_manager.draw_all()
+            self.enable_edit_anchor_points()
         else:
-            self.pages_manager.anchor_manager.save_page_points()
-            self.clear_canvas_objects()
-            self.update_current_page()
-            self.select_page_switch_handlers()
-            self.var_edit_page_anchors.set(self.name_btn_edit_anchors)
+            self.disable_edit_anchor_points()
 
-        self.update_anchor_indices()
+    def handle_create_more_lines(self, event=None):
+        """
+        Creates multiple lines from first two rows of points
+        Using value from entry, creates N intermediate points with equal intervals between adjacent points
+
+        To make this function work properly, user must create the same number of points in both lines
+        Otherwise, lines below will be skewed
+        """
+        update_integer_field(self.var_lines_count)
+
+        if self.pages_manager.anchor_manager is not None:
+            lines_num = int(self.var_lines_count.get())
+            if lines_num > 0:
+                if not self.pages_manager.anchor_manager.add_intermediate_lines(0, 1, lines_num):
+                    messagebox.showinfo("Error", "Cannot create intermediate lines\nfrom first two lines")
+
 
     def handle_canvas_enter(self, event=None):
         if event.widget == self.canvas:
@@ -321,6 +362,7 @@ class PageTextWriterApp(tk.Frame,
             if self.pages_manager.anchor_manager is not None:
                 self.pages_manager.anchor_manager.delete_temp_point()
                 self.continue_point_redraw = False
+
 
     def handle_mouse_motion(self, event):
         self.mouse_position = Point(event.x, event.y)
@@ -338,6 +380,7 @@ class PageTextWriterApp(tk.Frame,
         if self.pages_manager.anchor_manager is not None:
             self.pages_manager.anchor_manager.delete_current_point()
             self.update_anchor_indices()
+
 
     def constant_redraw_last_anchor(self, point):
         """
@@ -366,7 +409,7 @@ class PageTextWriterApp(tk.Frame,
 
     def handle_next_page(self, event=None):
         if self.pages_manager.anchor_manager is not None:
-            self.pages_manager.anchor_manager.save_page_points()
+            self.disable_edit_anchor_points()
 
         self.pages_manager.next_page()
         self.update_current_page()
@@ -374,7 +417,7 @@ class PageTextWriterApp(tk.Frame,
 
     def handle_prev_page(self, event=None):
         if self.pages_manager.anchor_manager is not None:
-            self.pages_manager.anchor_manager.save_page_points()
+            self.disable_edit_anchor_points()
 
         self.pages_manager.previous_page()
         self.update_current_page()
