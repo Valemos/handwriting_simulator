@@ -27,7 +27,7 @@ class PageManager:
         for line in self.pages_iterator.current().lines_points:
             self.point_iterators.append(ExtendingIterator(line))
 
-        # iterator through all other iterator objects
+        # iterator through all other iterator canvas_objects
         self.line_iterator = ExtendingIterator(self.point_iterators)
 
     def save_page_points(self):

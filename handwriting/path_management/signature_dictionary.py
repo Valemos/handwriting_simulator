@@ -3,7 +3,6 @@ from pathlib import Path
 from handwriting.path_management.handwritten_path import HandwrittenPath
 from handwriting.path_management.path_group import PathGroup
 
-from handwriting.step_functions import *
 from handwriting.cyclic_iterator import CyclicIterator, EmptyIterator
 
 class SignatureDictionaryPathsIterator:
@@ -66,7 +65,7 @@ class SignatureDictionaryPathsIterator:
 
 class SignatureDictionary:
     """
-    Contains multiple PathGroup objects and can give access to any object
+    Contains multiple PathGroup canvas_objects and can give access to any object
     using PathGroup name and index of an object in that group
 
     composite key

@@ -8,7 +8,7 @@ class OptionMenuManager:
         if choices is None, deletes all options in path and returns
         :param menu: OptionMenu object
         :param choices: dictionary with name and value for choice function
-        :param handler: handler function for all chosen objects
+        :param handler: handler function for all chosen canvas_objects
         """
         menu['menu'].delete(0, 'end')  # delete all elements from menu
 

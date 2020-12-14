@@ -3,13 +3,13 @@ from abc import ABC
 
 class EventManager(ABC):
     """
-    Implementing this class allows to organize binding key handling to some specific objects
+    Implementing this class allows to organize binding key handling to some specific canvas_objects
     To use this interface, user must implement function, returning dictionary with handler functions
     """
 
     def create_events_dict(self):
         """
-        this function must be called after all GUI objects was created
+        this function must be called after all GUI canvas_objects was created
 
         dictionary with keys as events and handler functions as values
         format as follows <modifier-type-first_part>, handler at the end of the chain
@@ -22,7 +22,7 @@ class EventManager(ABC):
     def bind_handlers(handler, first_part=None, second_part=None):
         """
         Recursively takes dictionary of dictionaries of tuples
-        and combines them to bind tkinter event functions to objects
+        and combines them to bind tkinter event functions to canvas_objects
 
         :param handler: object to iterate through
         :param first_part: the first part of command

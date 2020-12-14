@@ -54,7 +54,7 @@ class HandwrittenPathLinesIterator:
 
 class HandwrittenPath(StreamSavableCollection):
     """
-    Contains name for path and list of components (objects of type Curve),
+    Contains name for path and list of components (canvas_objects of type Curve),
     which represent separate sets of shifts
     """
 

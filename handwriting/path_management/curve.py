@@ -87,7 +87,7 @@ class Curve(StreamSavable):
     @staticmethod
     def convert_abs_to_shifts(abs_points: list):
         """
-        Takes as input list of Point objects
+        Takes as input list of Point canvas_objects
         :param abs_points: list of absolute points
         :return:
         """

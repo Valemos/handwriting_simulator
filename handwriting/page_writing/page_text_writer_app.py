@@ -12,11 +12,14 @@ from handwriting.canvas_objects_manager import CanvasObjectsManager
 from handwriting.event_handler import EventManager
 from handwriting.grid_manager import GridManager
 from handwriting.option_menu_manager import OptionMenuManager
+from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
 from handwriting.page_writing.page_manager import PageManager
 from handwriting.path_management.dictionary_manager import DictionaryManager
 from handwriting.path_management.point import Point
 from handwriting.path_management.signature_dictionary import SignatureDictionary
 from handwriting.path_management.handwritten_path import HandwrittenPath
+from handwriting.page_writing.anchor_points_handlers import AnchorPointsHandlers
+from handwriting.page_writing.page_button_handlers import PageButtonHandlers
 
 
 class PageTextWriterApp(tk.Frame,
@@ -33,33 +36,23 @@ class PageTextWriterApp(tk.Frame,
         tk.Frame.__init__(self, root)
         self.root = root
 
-        self.brush_size = 5
-        self.brush_color = "black"
-
         self.letters_dictionary = None
         self.pages_manager = PageManager()
 
         self.text_image = None
 
-        self.points_counter = 0
-        self.points_colors = ['red', 'red', 'black']
-
-        self.text_points_format = '({0}, {1})/({2}, {3})\n({4}, {5})'
-
-        self.image_suffix = '.png'
-
-        self.shift_paths_open_mode = tk.BooleanVar()
-        self.shift_paths_open_mode.set(0)
-
+        self.mouse_position = None
         self.setup_UI()
         self.reset_canvas()
         self.update_pages_menu()
 
+        self.arrow_handlers: ButtonHandlerGroup = None
+        self.select_page_switch_handlers()
+
         self.open_dictionary(r"D:\coding\Python_codes\Handwriting_extractor_project\paths_format_transition\anton.dict")
         self.open_pages_directory(r"D:\coding\Python_codes\Handwriting_extractor_project\pages")
-        self.update_current_page()
-
         self.entry_draw_text.insert(1.0, "прив")
+        self.update_current_page()
 
         # allow to edit canvas after it was created
         CanvasObjectsManager.__init__(self)
@@ -67,13 +60,12 @@ class PageTextWriterApp(tk.Frame,
     def create_events_dict(self):
         return \
             {
-                # "B1": {
-                #     "ButtonRelease": (self.canvas, self.handle_mouse_release),
-                #     "Motion": (self.canvas, self.handle_motion_draw)
-                # },
+                "Motion": (self.root, self.handle_mouse_motion),
                 "KeyPress": {
-                    "Left": (self.root, self.handle_prev_page),
-                    "Right": (self.root, self.handle_next_page),
+                    "Left": (self.root, self.button_left),
+                    "Right": (self.root, self.button_right),
+                    "Up": (self.root, self.button_up),
+                    "Down": (self.root, self.button_down),
                     "Return": [
                         (self.entry_dict_path, self.handle_update_dict_path),
                         (self.entry_pages_dir, self.handle_update_pages_path)
@@ -85,7 +77,7 @@ class PageTextWriterApp(tk.Frame,
     def create_ui_grid(self, root):
         """
         Grid must be created before event binding
-        :return: grid of objects
+        :return: grid of canvas_objects
         """
 
         grid_width = 15
@@ -124,11 +116,6 @@ class PageTextWriterApp(tk.Frame,
         btn_reset_text = tk.Button(root, text="Reset text", width=round(grid_width * 2 / 3),
                                    command=lambda: self.handle_reset_text())
 
-        self.var_points_str = tk.StringVar(self)
-        self.var_points_str.set(self.text_points_format.format(*[0] * 6))
-        field_points_str = tk.Label(root, width=grid_width,
-                                    textvariable=self.var_points_str)
-
         label_space_sz = tk.Label(root, text="Space size")
 
         self.space_sz_var = tk.StringVar(self)
@@ -148,12 +135,20 @@ class PageTextWriterApp(tk.Frame,
         btn_save_pages = tk.Button(root, text="Save pages", width=grid_width,
                                    command=self.save_pages_to_files)
 
+        self.name_btn_edit_anchors = "Edit anchors"
+        self.name_btn_stop_edit_anchors = "Stop edit anchors"
+        self.var_edit_page_anchors = tk.StringVar()
+        self.var_edit_page_anchors.set(self.name_btn_edit_anchors)
+        btn_edit_page_anchors = tk.Button(root, textvariable=self.var_edit_page_anchors, width=grid_width,
+                                          command=self.handle_edit_page_points)
+
+
         # arrange table
         widgets_table_rows = [
-            [None,              label_space_sz,         entry_space_sz,     field_points_str],
+            [None,              label_space_sz,         entry_space_sz],
             [label_dict_path,   self.entry_dict_path,   btn_open_dict],
             [label_pages_dir,   self.entry_pages_dir,   btn_open_pages,     btn_pages_from_images],
-            [btn_rename_page,   self.menu_pages,        btn_remove_page],
+            [btn_rename_page,   self.menu_pages,        btn_remove_page,    btn_edit_page_anchors],
             [btn_save_pages,    frame_page_controls,    btn_reset_text,     btn_draw_text],
             [(self.entry_draw_text, {"columnspan": 4})]
         ]
@@ -178,7 +173,6 @@ class PageTextWriterApp(tk.Frame,
 
         self.canvas = tk.Canvas(self, bg="white", width=210 * 2, height=round(210 * 2 * sqrt(2)))
         self.reset_canvas()
-
 
         self.rowconfigure(1)
         self.columnconfigure(2)
@@ -247,15 +241,16 @@ class PageTextWriterApp(tk.Frame,
     def handle_reset_text(self):
         self.pages_manager.current_page().image_text = None
         self.pages_manager.current_page().set_current_image_initial()
+        self.update_current_page()
 
     def draw_point_scope(self, point, color):
         lst = []
         r = 10
-        lst.append(self.canvas.create_oval((point[0] - r, point[1] - r, point[0] + r, point[1] + r), outline=color))
-        lst.append(self.canvas.create_line(point[0], point[1] - r, point[0], point[1] + r, fill=color))
-        lst.append(self.canvas.create_line(point[0] - r, point[1], point[0] + r, point[1], fill=color))
+        lst.append(self.canvas.create_oval((point.x - r, point.y - r, point.x + r, point.y + r), outline=color))
+        lst.append(self.canvas.create_line(point.x, point.y - r, point.x, point.y + r, fill=color))
+        lst.append(self.canvas.create_line(point.x - r, point.y, point.x + r, point.y, fill=color))
 
-        self.points_draw_objects.extend(lst)
+        self.append_canvas_objects(lst)
 
     def handle_delete_page(self, event=None):
         self.pages_manager.delete_current_page()
@@ -267,6 +262,77 @@ class PageTextWriterApp(tk.Frame,
         self.pages_manager.select_page(choice)
         self.update_current_page()
         self.update_page_name()
+
+
+
+    def select_page_switch_handlers(self):
+        """Selects set of handlers to move between pages"""
+        self.arrow_handlers = PageButtonHandlers
+
+    def select_anchor_point_handlers(self):
+        """Selects set of handlers to move between anchor points on this page"""
+        self.arrow_handlers = AnchorPointsHandlers
+
+    def handle_edit_page_points(self, event=None):
+        """Switches modes for button interaction"""
+
+        if self.var_edit_page_anchors.get() == self.name_btn_edit_anchors:
+            self.select_anchor_point_handlers()
+            self.var_edit_page_anchors.set(self.name_btn_stop_edit_anchors)
+
+            # start modifying page anchor points
+            self.pages_manager.start_line_points_setup()
+
+            # draw all current points for this page
+            for row in self.pages_manager.current_page().lines_points:
+                for point in row:
+                    self.draw_page_anchor(point)
+
+            if self.mouse_position is not None:
+                self.redraw_last_anchor(self.mouse_position)
+
+        else:
+            self.clear_canvas_objects()
+            self.update_current_page()
+            self.select_page_switch_handlers()
+            self.var_edit_page_anchors.set(self.name_btn_edit_anchors)
+
+    def handle_mouse_motion(self, event):
+        self.mouse_position = Point(event.x, event.y)
+
+    def draw_page_anchor(self, point: Point):
+        """This function can apply transformation to anchor points"""
+        self.draw_point_scope(point, "black")
+
+    # todo: there will be a problem when user redraws point and switches to another point
+    # cannot change previous or current drawn point parameters without finding right tkinter objects
+    # maybe add hashmap for point objects to store canvas drawn objects for each Point object
+    def redraw_last_anchor(self, point):
+        """
+        Deletes last drawn objects from canvas and draws new point scope
+        :param point: tuple or list with two elements - x and y coordinates
+        """
+        last_obj = self.pop_last_canvas_objects()
+        for obj in last_obj:
+            self.canvas.delete(obj)
+
+        self.draw_point_scope(point, "black")
+
+        if self.arrow_handlers is AnchorPointsHandlers:
+            self.root.after(17, self.redraw_last_anchor)
+
+
+    def button_left(self, event=None):
+        self.arrow_handlers.left(self)
+
+    def button_right(self, event=None):
+        self.arrow_handlers.right(self)
+
+    def button_up(self, event=None):
+        self.arrow_handlers.up(self)
+
+    def button_down(self, event=None):
+        self.arrow_handlers.down(self)
 
     def handle_next_page(self, event=None):
         self.pages_manager.next_page()
@@ -334,7 +400,6 @@ class PageTextWriterApp(tk.Frame,
 
         for p1, p2 in total_path:
             draw.line((*p1, *p2), fill=0, width=4)
-
 
     def update_pages(self, file_path):
         self.pages_manager.pages = []

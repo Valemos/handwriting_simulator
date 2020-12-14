@@ -71,7 +71,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
     def create_ui_grid(self, root):
         """
         Grid must be created before event binding
-        :return: grid of objects
+        :return: grid of canvas_objects
         """
 
         grid_width = 15
@@ -151,7 +151,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
                                  command=self.handle_create_new_path)
 
         """
-        list of rows with widget objects, representing grid of corresponding widgets
+        list of rows with widget canvas_objects, representing grid of corresponding widgets
         to specify parameters for .grid function object is wrapped into dict with all it's parameters
         """
 

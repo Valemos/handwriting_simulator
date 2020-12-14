@@ -22,9 +22,9 @@ class StreamSavableCollection(StreamSavable, SavableName, ABC):
     def read_next(cls, byte_stream):
         """
         handler reads name of object
-        Than reads multiple objects from the same byte stream
+        Than reads multiple canvas_objects from the same byte stream
 
-        If N is zero, than it indicates, that object has no name, but still contains HandwrittenPath objects
+        If N is zero, than it indicates, that object has no name, but still contains HandwrittenPath canvas_objects
 
         If N is not zero, reads the name, than reads first object
 
@@ -58,11 +58,11 @@ class StreamSavableCollection(StreamSavable, SavableName, ABC):
         Writes object binary representation to byte stream
 
         If name is empty, but components list is not,
-        1 zero byte will be written to indicate that name is empty, and continue writing Curve objects
+        1 zero byte will be written to indicate that name is empty, and continue writing Curve canvas_objects
 
         If name is not empty, but path does not contain any Curves,
         writs name as usual, and instead of no bytes at all for Curves list,
-        writs zero length for Curves objects list
+        writs zero length for Curves canvas_objects list
 
         To detect, that previous upper level object list is finished,
         write one empty child_object representation to file
@@ -80,13 +80,13 @@ class StreamSavableCollection(StreamSavable, SavableName, ABC):
 
     def empty(self):
         """
-        To read objects from files correctly, we assume that empty object is the object
+        To read canvas_objects from files correctly, we assume that empty object is the object
         which have name '' and at the same time components list is empty
 
-        if name is not empty, this path could have no objects in it.
+        if name is not empty, this path could have no canvas_objects in it.
         but, at the same time, have a name
 
-        if name is empty, but objects is not, it is also a valid object,
+        if name is empty, but canvas_objects is not, it is also a valid object,
         because we do not necessarly need a name to access this path from PathGroup
         """
         return len(self.components) == 0

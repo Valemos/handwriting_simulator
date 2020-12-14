@@ -4,9 +4,9 @@ class GridManager:
     @staticmethod
     def put_objects_on_grid(grid_rows, arguments=None):
         """
-        To correctly put objects in one grid, they must have the same parent element
+        To correctly put canvas_objects in one grid, they must have the same parent element
         That can be packed as grid
-        :param grid_rows: rows with objects to place inside their parent
+        :param grid_rows: rows with canvas_objects to place inside their parent
         :param arguments: additional global aguments that will be applied to every grid entry
         """
         for row in range(len(grid_rows)):
