@@ -17,8 +17,6 @@ class PageManager:
         self.pages = []
         self.pages_iterator = CyclicIterator(self.pages)
         self.anchor_manager: AnchorManager = None
-        self.line_iterator = None
-        self.point_iterators = None
 
     def start_line_points_setup(self, canvas, draw_function):
         """

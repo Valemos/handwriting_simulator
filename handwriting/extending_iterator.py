@@ -15,8 +15,9 @@ class ExtendingIterator:
         if 0 <= self.object_index < len(self.object_list) - 1:
             self.object_index += 1
         elif self.object_index == len(self.object_list) - 1:
-            self.object_list.append(None)
-            self.object_index += 1
+            if self.object_list[-1] is not None:
+                self.object_list.append(None)
+                self.object_index += 1
         else:
             self.object_index = 0
 
@@ -24,8 +25,8 @@ class ExtendingIterator:
         if 0 < self.object_index < len(self.object_list):
             self.object_index -= 1
         elif self.object_index == 0:
-            self.object_index = 0
-            self.object_list.insert(0, None)
+            if self.object_list[0] is not None:
+                self.object_list.insert(0, None)
         else:
             self.object_index = 0
 
@@ -45,7 +46,13 @@ class ExtendingIterator:
             return self.object_list[self.object_index]
         return None
 
-    def check_extended(self):
+    def delete_current(self):
+        if 0 <= self.object_index < len(self.object_list):
+            self.object_list.pop(self.object_index)
+            self.object_index = self.object_index - 1 if self.object_index > 0 else 0
+
+
+    def check_cell_empty(self):
         """
         Returns True, if current index is inside bounds, but current object is None
         That means, that current object was moved using next() or prev()

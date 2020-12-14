@@ -67,8 +67,9 @@ class PageTextWriterApp(tk.Frame,
             {
                 "Enter": (self.root, self.handle_canvas_enter),
                 "Leave": (self.root, self.handle_canvas_leave),
-                "B1": {
-                    "ButtonRelease": (self.canvas, self.handle_mouse_release)
+                "ButtonRelease": {
+                    "1": (self.canvas, self.handle_left_mouse_release),
+                    "3": (self.canvas, self.handle_right_mouse_release)
                 },
                 "Motion": (self.root, self.handle_mouse_motion),
                 "KeyPress": {
@@ -153,14 +154,19 @@ class PageTextWriterApp(tk.Frame,
                                           command=self.handle_edit_page_points)
 
 
+        self.format_anchor_index = "line: {0:<3} point: {1:<3}"
+        self.var_anchor_index = tk.StringVar(root)
+        label_anchor_index = tk.Label(root, textvariable=self.var_anchor_index, width=grid_width)
+        self.update_anchor_indices()
+
         # arrange table
         widgets_table_rows = [
             [None,              label_space_sz,         entry_space_sz],
             [label_dict_path,   self.entry_dict_path,   btn_open_dict],
             [label_pages_dir,   self.entry_pages_dir,   btn_open_pages,     btn_pages_from_images],
-            [btn_rename_page,   self.menu_pages,        btn_remove_page,    btn_edit_page_anchors],
+            [btn_rename_page,   self.menu_pages,        btn_remove_page,    btn_edit_page_anchors,  label_anchor_index],
             [btn_save_pages,    frame_page_controls,    btn_reset_text,     btn_draw_text],
-            [(self.entry_draw_text, {"columnspan": 4})]
+            [(self.entry_draw_text, {"columnspan": 5})]
         ]
 
         # if argument not specifyed explicitly, take it from global arguments
@@ -270,10 +276,11 @@ class PageTextWriterApp(tk.Frame,
         self.update_page_name()
 
     def handle_page_chosen(self, choice):
+        if self.pages_manager.anchor_manager is not None:
+            self.pages_manager.anchor_manager.save_page_points()
         self.pages_manager.select_page(choice)
         self.update_current_page()
         self.update_page_name()
-
 
     def select_page_switch_handlers(self):
         """Selects set of handlers to move between pages"""
@@ -294,10 +301,13 @@ class PageTextWriterApp(tk.Frame,
             self.pages_manager.start_line_points_setup(self.canvas, self.draw_point_scope)
             self.pages_manager.anchor_manager.draw_all()
         else:
+            self.pages_manager.anchor_manager.save_page_points()
             self.clear_canvas_objects()
             self.update_current_page()
             self.select_page_switch_handlers()
             self.var_edit_page_anchors.set(self.name_btn_edit_anchors)
+
+        self.update_anchor_indices()
 
     def handle_canvas_enter(self, event=None):
         if event.widget == self.canvas:
@@ -308,14 +318,26 @@ class PageTextWriterApp(tk.Frame,
 
     def handle_canvas_leave(self, event=None):
         if event.widget == self.canvas:
-            self.continue_point_redraw = False
+            if self.pages_manager.anchor_manager is not None:
+                self.pages_manager.anchor_manager.delete_temp_point()
+                self.continue_point_redraw = False
 
     def handle_mouse_motion(self, event):
         self.mouse_position = Point(event.x, event.y)
 
-    def handle_mouse_release(self, event):
+    def handle_left_mouse_release(self, event):
         if self.pages_manager.anchor_manager is not None:
-            self.pages_manager.anchor_manager.update_line_point(Point(event.x, event.y))
+            self.pages_manager.anchor_manager.update_current_point(Point(event.x, event.y))
+
+            if self.pages_manager.anchor_manager.get_current_point() is not None:
+                self.pages_manager.anchor_manager.move_right()
+
+            self.update_anchor_indices()
+
+    def handle_right_mouse_release(self, event):
+        if self.pages_manager.anchor_manager is not None:
+            self.pages_manager.anchor_manager.delete_current_point()
+            self.update_anchor_indices()
 
     def constant_redraw_last_anchor(self, point):
         """
@@ -330,7 +352,6 @@ class PageTextWriterApp(tk.Frame,
         if self.continue_point_redraw:
             self.root.after(17, self.constant_redraw_last_anchor, self.mouse_position)
 
-
     def button_left(self, event=None):
         self.arrow_handlers.left(self)
 
@@ -344,17 +365,34 @@ class PageTextWriterApp(tk.Frame,
         self.arrow_handlers.down(self)
 
     def handle_next_page(self, event=None):
+        if self.pages_manager.anchor_manager is not None:
+            self.pages_manager.anchor_manager.save_page_points()
+
         self.pages_manager.next_page()
         self.update_current_page()
         self.update_page_name()
 
     def handle_prev_page(self, event=None):
+        if self.pages_manager.anchor_manager is not None:
+            self.pages_manager.anchor_manager.save_page_points()
+
         self.pages_manager.previous_page()
         self.update_current_page()
         self.update_page_name()
 
+    def update_anchor_indices(self):
+        line_i, point_i = -1, -1
+        if self.pages_manager.anchor_manager is not None:
+            line_iter = self.pages_manager.anchor_manager.line_iterator
+            if line_iter is not None:
+                line_i = line_iter.object_index
+                point_i = line_iter.current().object_index if line_iter.current() is not None else 0
+        res = self.format_anchor_index.format(line_i, point_i)
+        self.var_anchor_index.set(self.format_anchor_index.format(line_i, point_i))
+
     def update_current_page(self):
         self.reset_canvas()
+        self.update_anchor_indices()
         if self.pages_manager.current_page() is not None:
             self.current_page_image = PhotoImage(
                 self.pages_manager.current_page().current_image.resize((
