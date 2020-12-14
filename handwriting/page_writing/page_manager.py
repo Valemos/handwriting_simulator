@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from handwriting.extending_iterator import ExtendingIterator
+from handwriting.page_writing.anchor_manager import AnchorManager
 from handwriting.path_management.point import Point
 from handwriting.cyclic_iterator import CyclicIterator
 from handwriting.page_writing.page import Page
@@ -15,82 +16,17 @@ class PageManager:
     def __init__(self):
         self.pages = []
         self.pages_iterator = CyclicIterator(self.pages)
+        self.anchor_manager: AnchorManager = None
         self.line_iterator = None
         self.point_iterators = None
 
-    def start_line_points_setup(self):
+    def start_line_points_setup(self, canvas, draw_function):
         """
         For current page creates updateable iterators to use move functions
         and update or add anchor points
         """
-        self.point_iterators = []
-        for line in self.pages_iterator.current().lines_points:
-            self.point_iterators.append(ExtendingIterator(line))
-
-        # iterator through all other iterator canvas_objects
-        self.line_iterator = ExtendingIterator(self.point_iterators)
-
-    def save_page_points(self):
-        """
-        Uses values from iterators and assigns them to current page object
-        """
-
-        if self.line_iterator is not None:
-            self.pages_iterator.current().lines_points = [it.object_list for it in self.point_iterators]
-            self.point_iterators = None
-            self.line_iterator = None
-
-    # set of functions to move between anchor points
-    def move_up(self):
-        """Move up in points iterator"""
-
-        if self.line_iterator is not None:
-            self.line_iterator.prev()
-            if self.line_iterator.check_extended():
-                self.line_iterator.set_current(ExtendingIterator([]))
-
-    def move_down(self):
-        """Move up in points iterators"""
-
-        if self.line_iterator is not None:
-            self.line_iterator.next()
-            if self.line_iterator.check_extended():
-                self.line_iterator.set_current(ExtendingIterator([]))
-
-    def move_left(self):
-        """Move up in points iterators"""
-
-        if self.line_iterator is not None:
-            if self.line_iterator.current() is not None:
-                self.line_iterator.current().prev()
-
-    def move_right(self):
-        """Move up in points iterators"""
-
-        if self.line_iterator is not None:
-            if self.line_iterator.current() is not None:
-                self.line_iterator.current().next()
-
-    def update_line_point(self, point: Point):
-        """
-        Updates or creates new position on this position in iterators
-        :param point: Point object to update
-        """
-        if self.line_iterator is not None:
-            if self.line_iterator.current() is not None:
-                self.line_iterator.current().set_current(point)
-
-    def get_current_point(self):
-        """
-        If line points setup started, returns current point
-        else, returns None
-
-        :return: Point object for given line index and point index in that line
-        """
-        if self.line_iterator is not None:
-            return self.line_iterator.current().current()
-        else:
-            return None
+        self.anchor_manager = AnchorManager(self.pages_iterator.current())
+        self.anchor_manager.set_canvas_draw(canvas, draw_function)
 
     # manage pages
     def current_page(self) -> Page:
@@ -101,9 +37,13 @@ class PageManager:
         return self.pages_iterator.current()
 
     def next_page(self):
+        if self.anchor_manager is not None:
+            self.anchor_manager = None
         self.pages_iterator.next()
 
     def previous_page(self):
+        if self.anchor_manager is not None:
+            self.anchor_manager = None
         self.pages_iterator.prev()
 
     def delete_current_page(self):

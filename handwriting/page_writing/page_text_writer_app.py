@@ -1,3 +1,4 @@
+import threading
 import tkinter as tk
 from math import sqrt
 from tkinter import filedialog
@@ -49,10 +50,14 @@ class PageTextWriterApp(tk.Frame,
         self.arrow_handlers: ButtonHandlerGroup = None
         self.select_page_switch_handlers()
 
-        self.open_dictionary(r"D:\coding\Python_codes\Handwriting_extractor_project\paths_format_transition\anton.dict")
+        # self.open_dictionary(r"D:\coding\Python_codes\Handwriting_extractor_project\paths_format_transition\anton.dict")
         self.open_pages_directory(r"D:\coding\Python_codes\Handwriting_extractor_project\pages")
-        self.entry_draw_text.insert(1.0, "прив")
-        self.update_current_page()
+        # self.entry_draw_text.insert(1.0, "прив")
+
+        def update_after_creation(app):
+            app.update_current_page()
+            exit(0)
+        threading.Thread(target=update_after_creation, args=(self,)).start()
 
         # allow to edit canvas after it was created
         CanvasObjectsManager.__init__(self)
@@ -60,6 +65,11 @@ class PageTextWriterApp(tk.Frame,
     def create_events_dict(self):
         return \
             {
+                "Enter": (self.root, self.handle_canvas_enter),
+                "Leave": (self.root, self.handle_canvas_leave),
+                "B1": {
+                    "ButtonRelease": (self.canvas, self.handle_mouse_release)
+                },
                 "Motion": (self.root, self.handle_mouse_motion),
                 "KeyPress": {
                     "Left": (self.root, self.button_left),
@@ -71,7 +81,7 @@ class PageTextWriterApp(tk.Frame,
                         (self.entry_pages_dir, self.handle_update_pages_path)
                     ],
                     "Delete": (self.root, self.handle_delete_page)
-                }
+                },
             }
 
     def create_ui_grid(self, root):
@@ -243,14 +253,15 @@ class PageTextWriterApp(tk.Frame,
         self.pages_manager.current_page().set_current_image_initial()
         self.update_current_page()
 
-    def draw_point_scope(self, point, color):
+    @staticmethod
+    def draw_point_scope(canvas, point, color="black"):
+        """creates scope shape on canvas and returns list of all created canvas objects"""
         lst = []
         r = 10
-        lst.append(self.canvas.create_oval((point.x - r, point.y - r, point.x + r, point.y + r), outline=color))
-        lst.append(self.canvas.create_line(point.x, point.y - r, point.x, point.y + r, fill=color))
-        lst.append(self.canvas.create_line(point.x - r, point.y, point.x + r, point.y, fill=color))
-
-        self.append_canvas_objects(lst)
+        lst.append(canvas.create_oval((point.x - r, point.y - r, point.x + r, point.y + r), outline=color))
+        lst.append(canvas.create_line(point.x, point.y - r, point.x, point.y + r, fill=color))
+        lst.append(canvas.create_line(point.x - r, point.y, point.x + r, point.y, fill=color))
+        return lst
 
     def handle_delete_page(self, event=None):
         self.pages_manager.delete_current_page()
@@ -262,7 +273,6 @@ class PageTextWriterApp(tk.Frame,
         self.pages_manager.select_page(choice)
         self.update_current_page()
         self.update_page_name()
-
 
 
     def select_page_switch_handlers(self):
@@ -281,45 +291,44 @@ class PageTextWriterApp(tk.Frame,
             self.var_edit_page_anchors.set(self.name_btn_stop_edit_anchors)
 
             # start modifying page anchor points
-            self.pages_manager.start_line_points_setup()
-
-            # draw all current points for this page
-            for row in self.pages_manager.current_page().lines_points:
-                for point in row:
-                    self.draw_page_anchor(point)
-
-            if self.mouse_position is not None:
-                self.redraw_last_anchor(self.mouse_position)
-
+            self.pages_manager.start_line_points_setup(self.canvas, self.draw_point_scope)
+            self.pages_manager.anchor_manager.draw_all()
         else:
             self.clear_canvas_objects()
             self.update_current_page()
             self.select_page_switch_handlers()
             self.var_edit_page_anchors.set(self.name_btn_edit_anchors)
 
+    def handle_canvas_enter(self, event=None):
+        if event.widget == self.canvas:
+            if self.arrow_handlers == AnchorPointsHandlers:
+                self.continue_point_redraw = True
+                if self.mouse_position is not None:
+                    self.constant_redraw_last_anchor(self.mouse_position)
+
+    def handle_canvas_leave(self, event=None):
+        if event.widget == self.canvas:
+            self.continue_point_redraw = False
+
     def handle_mouse_motion(self, event):
         self.mouse_position = Point(event.x, event.y)
 
-    def draw_page_anchor(self, point: Point):
-        """This function can apply transformation to anchor points"""
-        self.draw_point_scope(point, "black")
+    def handle_mouse_release(self, event):
+        if self.pages_manager.anchor_manager is not None:
+            self.pages_manager.anchor_manager.update_line_point(Point(event.x, event.y))
 
-    # todo: there will be a problem when user redraws point and switches to another point
-    # cannot change previous or current drawn point parameters without finding right tkinter objects
-    # maybe add hashmap for point objects to store canvas drawn objects for each Point object
-    def redraw_last_anchor(self, point):
+    def constant_redraw_last_anchor(self, point):
         """
         Deletes last drawn objects from canvas and draws new point scope
+        using anchor manager functions
         :param point: tuple or list with two elements - x and y coordinates
         """
-        last_obj = self.pop_last_canvas_objects()
-        for obj in last_obj:
-            self.canvas.delete(obj)
 
-        self.draw_point_scope(point, "black")
+        if self.pages_manager.anchor_manager is not None:
+            self.pages_manager.anchor_manager.redraw_pointer_point(point)
 
-        if self.arrow_handlers is AnchorPointsHandlers:
-            self.root.after(17, self.redraw_last_anchor)
+        if self.continue_point_redraw:
+            self.root.after(17, self.constant_redraw_last_anchor, self.mouse_position)
 
 
     def button_left(self, event=None):

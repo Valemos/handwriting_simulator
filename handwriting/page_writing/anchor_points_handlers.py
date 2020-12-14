@@ -4,16 +4,20 @@ class AnchorPointsHandlers(ButtonHandlerGroup):
 
     @staticmethod
     def left(app):
-        app.pages_manager.move_left()
+        if app.pages_manager.anchor_manager is not None:
+            app.pages_manager.anchor_manager.move_left()
 
     @staticmethod
     def right(app):
-        app.pages_manager.move_right()
+        if app.pages_manager.anchor_manager is not None:
+            app.pages_manager.anchor_manager.move_right()
 
     @staticmethod
     def up(app):
-        app.pages_manager.move_up()
+        if app.pages_manager.anchor_manager is not None:
+            app.pages_manager.anchor_manager.move_up()
 
     @staticmethod
     def down(app):
-        app.pages_manager.move_down()
+        if app.pages_manager.anchor_manager is not None:
+            app.pages_manager.anchor_manager.move_down()

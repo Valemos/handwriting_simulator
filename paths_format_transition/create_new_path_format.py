@@ -10,7 +10,7 @@ input_files = list(Path("../letters/").glob("*.dat"))[:3]
 
 output_folder = Path("../my_letters")
 
-# test_file = Path('test.dat')
+# test_file = Path('test_dictionary.dat')
 # test_file.open('w+').close()
 
 new_dictionary = SignatureDictionary("anton")
