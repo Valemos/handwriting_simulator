@@ -94,10 +94,13 @@ class SignatureDictionary:
         return f"{self.name}: {len(self.path_groups)}"
 
     def __getitem__(self, group_name):
-        if group_name in self.groups_dict:
-            return self.groups_dict[group_name]
-        else:
-            return None
+        if isinstance(group_name, str):
+            if group_name in self.groups_dict:
+                return self.groups_dict[group_name]
+        elif isinstance(group_name, int):
+            if 0 <= group_name < len(self.path_groups):
+                return self.path_groups[group_name]
+        return None
 
     def __contains__(self, item):
         return item in self.path_groups

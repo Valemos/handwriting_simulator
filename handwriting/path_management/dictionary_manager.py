@@ -19,7 +19,7 @@ class DictionaryManager:
 
     @staticmethod
     def get_dictionary_file_path(path_str=None):
-        if path_str is not None:
+        if path_str is not None and path_str.replace(' ', '') != '':
             file_path = Path(path_str)
         else:
             file_path = filedialog.askopenfilename()
