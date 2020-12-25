@@ -23,8 +23,8 @@ class PathGroup(StreamSavableCollection):
 
     def __getitem__(self, i):
         """
-        :param i:   index of object to get from group
-        :return:    path on this index
+        :param i:   variant_index of object to get from group
+        :return:    path on this variant_index
         """
         return self.components[i]
 
@@ -72,7 +72,7 @@ class PathGroup(StreamSavableCollection):
             self.write_to_stream(fout)
 
     def remove_by_index(self, index):
-        """Removes HandwrittenPath form list by index"""
+        """Removes HandwrittenPath form list by variant_index"""
         self.components.pop(index)
 
     def empty(self):

@@ -35,24 +35,3 @@ class CyclicIterator:
         if 0 <= self.object_index < len(self.object_list):
             return self.object_list[self.object_index]
         return None
-
-
-class EmptyIterator(CyclicIterator):
-
-    def __init__(self):
-        super().__init__(None)
-
-    def get_max(self):
-        return 0
-
-    def next(self):
-        pass
-
-    def prev(self):
-        pass
-
-    def select(self, index):
-        pass
-
-    def current(self):
-        return None

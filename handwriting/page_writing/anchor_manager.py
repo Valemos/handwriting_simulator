@@ -170,7 +170,7 @@ class AnchorManager:
         If line points setup started, returns current point
         else, returns None
 
-        :return: Point object for given line index and point index in that line
+        :return: Point object for given line variant_index and point variant_index in that line
         """
         if self.line_iterator is not None:
             if self.line_iterator.current() is not None:
@@ -183,8 +183,8 @@ class AnchorManager:
         Top line is taken as guide for letters from next line
         Every next line uses previous line to guide letters in right way
 
-        :param top_index: index of top line to take points from
-        :param bot_index: index of bottom line to take points from
+        :param top_index: variant_index of top line to take points from
+        :param bot_index: variant_index of bottom line to take points from
         :param line_count: number of total lines to end up with
         :return: True if lines were added, False otherwise
         """

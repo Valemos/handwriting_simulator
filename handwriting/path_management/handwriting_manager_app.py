@@ -5,9 +5,11 @@ from tkinter import messagebox
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from handwriting.gui_parts.entry_with_label import EntryIntegerWithLabel
+from handwriting.gui_parts.entry_integer_with_label import EntryIntegerWithLabel
+from handwriting.gui_parts.entry_with_label import EntryWithLabel
 from handwriting.gui_parts.left_right_buttons import LeftRightButtons
-from handwriting.gui_parts.menu_choices_with_handler import MenuChoicesWithHandler
+from handwriting.gui_parts.menu_indexed_with_handler import MenuIndexedWithHandler
+from handwriting.gui_parts.menu_with_handler import MenuWithHandler
 from handwriting.path_management.point import Point
 from handwriting.path_management.handwritten_path import HandwrittenPath, HandwrittenPathLinesIterator
 from handwriting.path_management.path_group import PathGroup
@@ -16,7 +18,7 @@ from handwriting.grid_manager import GridManager
 from handwriting.event_handler import EventManager
 
 
-class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventManager):
+class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
     default_background_path = Path('default_bg.gif')
 
     def __init__(self, root):
@@ -28,11 +30,9 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         self.brush_color = "black"
 
         # dictionary of path groups with default value
-        self.dictionary_groups = None
-        # pages_iterator inside dictionary through all groups and path variants
-        self.paths_iterator = None
+        self.dictionary = DictionaryManager()
 
-        # current path from self.paths_iterator
+        # current path from self.iterator
         self.current_path: HandwrittenPath = None
         # pages_iterator inside path to draw lines
         self.current_path_iterator: HandwrittenPathLinesIterator = None
@@ -56,9 +56,9 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
                     "Left": (self.root, self.handle_prev_letter),
                     "Right": (self.root, self.handle_next_letter),
                     "Return": [
-                        (self.entry_shift_x, self.handle_draw_path),
-                        (self.entry_shift_y, self.handle_draw_path),
-                        (self.file_entry, self.handle_path_entry_update),
+                        (self.entry_shift_x.entry, self.handle_draw_path),
+                        (self.entry_shift_y.entry, self.handle_draw_path),
+                        (self.entry_dict_file, self.open_dictionary_from_entry_path),
                         (self.entry_new_group, self.handle_create_new_path),
                         (self.entry_new_variant, self.handle_create_new_path)
                     ],
@@ -79,50 +79,34 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         self.reset_canvas()
         general_lab = tk.Label(root, text="General: ")
 
-        self.entry_shift_x = EntryIntegerWithLabel(root, "X:", grid_width)
-        self.entry_shift_y = EntryIntegerWithLabel(root, "Y:", grid_width)
+        self.entry_shift_x = EntryIntegerWithLabel(root, "X:", grid_width, 1 / 5)
+        self.entry_shift_y = EntryIntegerWithLabel(root, "Y:", grid_width, 1 / 5)
+        self.entry_shift_x.set("100")
+        self.entry_shift_y.set("100")
 
-        label_ch_file = tk.Label(root, text="File path: ")
         label_path_gr = tk.Label(root, text="Path: ")
         btn_open_file = tk.Button(root, text="Open file", width=grid_width,
-                                  command=self.handle_path_entry_update)
+                                  command=self.open_dictionary_from_entry_path)
         btn_save_file = tk.Button(root, text="Save file", width=grid_width,
-                                  command=self.save_selected_file)
+                                  command=self.save_dictionary_to_file)
 
-        self.field_file_path = tk.StringVar(root)
-        self.file_entry = tk.Entry(root, width=grid_width, textvariable=self.field_file_path)
+        self.entry_dict_file = EntryWithLabel(root, "File path:", grid_width * 2, 1/3)
 
         # this menu lets user select path group
-        self.menu_path_group = MenuChoicesWithHandler(root, grid_width, self.handle_group_chosen)
-        self.menu_path_variant = MenuChoicesWithHandler(root, grid_width, self.handle_variant_chosen)
+        self.menu_path_group = MenuWithHandler(root, grid_width, self.handle_group_chosen)
+        self.menu_path_variant = MenuIndexedWithHandler(root, grid_width, self.handle_variant_chosen)
 
         # menu for path variant
         self.update_menu_names()
 
 
-
-        frame_switch_paths = LeftRightButtons(root, grid_width, self.handle_prev_letter, self.handle_next_letter)
+        buttons_move_paths = LeftRightButtons(root, grid_width, self.handle_prev_letter, self.handle_next_letter)
 
         btn_clear = tk.Button(root, text="Clear path", width=grid_width, command=self.handle_clear_path)
         btn_del = tk.Button(root, text="Delete path", width=grid_width, command=self.handle_delete_path)
 
-        frame_new_group = tk.Frame(root)
-        label_new_group = tk.Label(frame_new_group, text='Group:',
-                                   width=round(grid_width / 3))
-        self.field_new_group = tk.StringVar(self)
-        self.entry_new_group = tk.Entry(frame_new_group, textvariable=self.field_new_group,
-                                        width=round(grid_width * 2 / 3))
-        label_new_group.pack(side=tk.LEFT)
-        self.entry_new_group.pack(side=tk.RIGHT)
-
-        frame_new_variant = tk.Frame(root)
-        label_new_variant = tk.Label(frame_new_variant, text='Variant:',
-                                     width=round(grid_width / 3))
-        self.field_new_variant = tk.StringVar(self)
-        self.entry_new_variant = tk.Entry(frame_new_variant, textvariable=self.field_new_variant,
-                                          width=round(grid_width * 2 / 3))
-        label_new_variant.pack(side=tk.LEFT)
-        self.entry_new_variant.pack(side=tk.RIGHT)
+        self.entry_new_group = EntryWithLabel(root, 'Group:', grid_width, 1/3)
+        self.entry_new_variant = EntryWithLabel(root, 'Variant:', grid_width, 1/3)
 
         label_new_path = tk.Label(root, text="New names")
         new_path_btn = tk.Button(root, text="New path", width=grid_width,
@@ -134,10 +118,10 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         """
 
         widgets_table_rows = [
-            [general_lab,       self.entry_shift_x,     self.entry_shift_x],
-            [label_ch_file,     self.file_entry,        btn_open_file,              btn_save_file],
-            [label_path_gr,     self.menu_path_group,   self.menu_path_variant,     frame_switch_paths],
-            [label_new_path,    frame_new_group,        frame_new_variant,          new_path_btn],
+            [general_lab,           self.entry_shift_x,         self.entry_shift_y],
+            [(self.entry_dict_file, {"columnspan": 2}), None,   btn_open_file, btn_save_file],
+            [label_path_gr,         self.menu_path_group,       self.menu_path_variant,     buttons_move_paths],
+            [label_new_path,        self.entry_new_group,       self.entry_new_variant,          new_path_btn],
             [None,              None, btn_clear,        btn_del],
             [(self.canvas, {"columnspan": 6, "sticky": None})]
         ]
@@ -231,17 +215,18 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         pass
 
     def handle_group_chosen(self, index):
-        if self.paths_iterator is not None:
-            self.paths_iterator.select(index)
-            self.reset_current_group()
+        if self.dictionary.exists():
+            self.dictionary.iterator.select(index)
+            self.reset_selected_group()
 
-    def handle_variant_chosen(self, index):
-        if self.paths_iterator is not None:
-            self.paths_iterator.select(self.paths_iterator.group_iter, index)
+    def handle_variant_chosen(self, variant_index):
+        if self.dictionary.exists():
+            group_index = self.dictionary.iterator.group_iter
+            self.dictionary.iterator.select(group_index, variant_index)
             self.update_current_path()
             self.update_menu_names()
 
-    def reset_current_group(self):
+    def reset_selected_group(self):
         """
         Function resets resets current group menu and variables
         """
@@ -251,7 +236,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
 
     def update_current_path(self, anchor_point: Point = None):
         """
-        Function assumes, that self.paths_iterator is not None
+        Function assumes, that self.iterator is not None
 
         Updates current path variables and applies shift to new path
         Draws current pages_iterator lines
@@ -259,7 +244,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         :param anchor_point: if anchor_point is not None,
                             updates absolute position of current path
         """
-        if self.paths_iterator is not None:
+        if self.dictionary.exists():
             self.current_path = self.paths_iterator.current()
             if self.current_path is not None:
                 if anchor_point is not None:
@@ -280,7 +265,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
 
         Creates new empty to current path group using default (or specifyed) additional name
         """
-        group_name = self.field_new_group.get()
+        group_name = self.entry_new_group.get()
         group_index = None
         for group_i in range(len(self.dictionary_groups)):
             if group_name == self.dictionary_groups[group_i].name:
@@ -298,7 +283,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
                 return
 
         self.paths_iterator.select(group_index)
-        path_name = self.field_new_variant.get()
+        path_name = self.entry_new_variant.get()
         if self.check_name_valid(path_name):
             self.paths_iterator.current_group().append_path(HandwrittenPath(path_name))
             self.paths_iterator.select(group_index, len(self.paths_iterator.current_group()) - 1)
@@ -319,7 +304,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
 
     def handle_clear_path(self, event=None):
         """Sets new path instead of current chosen letter"""
-        if self.paths_iterator is not None:
+        if self.dictionary.exists():
             if self.paths_iterator.current() is not None:
                 self.paths_iterator.current().components = []
                 self.update_current_path()
@@ -343,7 +328,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
                 self.handle_delete_group()
 
     def handle_next_letter(self, event=None):
-        if self.paths_iterator is not None:
+        if self.dictionary.exists():
             prev_group = self.paths_iterator.group_iter
 
             self.paths_iterator.next()
@@ -354,7 +339,7 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
                 self.update_menu_path_variants()
 
     def handle_prev_letter(self, event=None):
-        if self.paths_iterator is not None:
+        if self.dictionary.exists():
             prev_group = self.paths_iterator.group_iter
 
             self.paths_iterator.prev()
@@ -384,40 +369,41 @@ class HandwritingShiftModifyer(tk.Frame, DictionaryManager, GridManager, EventMa
         if self.dictionary_groups is not None:
             group = self.paths_iterator.current_group()
             if group is not None:
-                choices = {get_index_name(group[i].name, i + 1): i for i in range(len(group))}
+                choices = {group[i].name: i for i in range(len(group))}
 
         self.menu_path_variant.update_choices(choices)
 
     def update_menu_names(self):
-        if self.paths_iterator is not None:
+        if self.dictionary.exists():
             group = self.paths_iterator.current_group()
             path = self.paths_iterator.current()
 
             self.menu_path_group.set(group.name if group is not None else None)
-            self.menu_path_variant.set(
-                get_index_name(path.name, self.paths_iterator.variant_iter.object_index + 1)
-                if path is not None else
-                None
-            )
+
+            if path is not None:
+                variant_index = self.paths_iterator.variant_iter.object_index + 1
+                self.menu_path_variant.set_indexed_name(variant_index, path.name)
+            else:
+                self.menu_path_variant.set(None)
+
         else:
             self.menu_path_group.set(None)
             self.menu_path_variant.set(None)
 
     # working with dictionary file
-    def handle_path_entry_update(self, event=None):
+    def open_dictionary_from_entry_path(self, event=None):
         self.root.focus()
 
-        dict_file = self.get_dictionary_file_path(self.field_file_path.get())
-        self.field_file_path.set(str(dict_file))
-        self.dictionary_groups, self.paths_iterator = self.open_dictionary_file(dict_file)
+        new_path = self.dictionary.read_from_file(self.entry_dict_file.get())
+        self.entry_dict_file.set(str(new_path))
 
         self.update_menu_groups()
-        self.reset_current_group()
+        self.reset_selected_group()
 
-    def save_selected_file(self):
+    def save_dictionary_to_file(self):
         if self.dictionary_groups is not None:
             self.dictionary_groups.save_file(
-                self.get_dictionary_file_path(self.field_file_path)
+                self.get_dictionary_file_path(self.entry_dict_file)
             )
 
     # other methods

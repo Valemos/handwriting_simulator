@@ -2,6 +2,7 @@ import tkinter as tk
 
 
 class LeftRightButtons(tk.Frame):
+
     def __init__(self, root, width, command_left, command_right):
         super().__init__(root)
         self.root = root

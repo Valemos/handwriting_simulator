@@ -1,12 +1,12 @@
 import tkinter as tk
 
 
-class MenuChoicesWithHandler(tk.OptionMenu):
+class MenuWithHandler(tk.OptionMenu):
 
     default_choice = "-"
 
     def __init__(self, root, width, handler):
-        self.variable_menu = tk.StringVar(self)
+        self.variable_menu = tk.StringVar(root)
         super().__init__(root, self.variable_menu, value=None)
         self.configure(width=width)
 

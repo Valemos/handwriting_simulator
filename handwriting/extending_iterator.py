@@ -1,7 +1,7 @@
 
 class ExtendingIterator:
     """
-    This class iterates through list and allows to add new items by iterating it's index outside of bounds
+    This class iterates through list and allows to add new items by iterating it's variant_index outside of bounds
     """
 
     def __init__(self, object_list: list):
@@ -71,7 +71,7 @@ class ExtendingIterator:
 
     def check_cell_empty(self):
         """
-        Returns True, if current index is inside bounds, but current object is None
+        Returns True, if current variant_index is inside bounds, but current object is None
         That means, that current object was moved using next() or prev()
         and list was extended with None object
         :return: True if current object is None, or object list is empty, False otherwise

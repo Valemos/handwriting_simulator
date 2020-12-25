@@ -1,72 +1,13 @@
 from pathlib import Path
 
-from handwriting.path_management.handwritten_path import HandwrittenPath
 from handwriting.path_management.path_group import PathGroup
-
-from handwriting.cyclic_iterator import CyclicIterator, EmptyIterator
-
-class SignatureDictionaryPathsIterator:
-
-    def __init__(self, dictionary):
-        self.dictionary = dictionary
-        self.group_iter = CyclicIterator(self.dictionary.path_groups)
-        self._update_variant()
-
-    def _update_variant(self):
-        if self.group_iter.current() is not None:
-            self.variant_iter = self.group_iter.current().get_iterator()
-        else:
-            self.variant_iter = EmptyIterator()
-
-    def next(self) -> HandwrittenPath:
-        """Iterates one step forward"""
-
-        self.variant_iter.next()
-        if self.variant_iter.object_index == 0:
-            # pages_iterator jumped to next loop
-            self.group_iter.next()
-            self._update_variant()
-
-    def prev(self) -> HandwrittenPath:
-        """Iterates step backwards and returns current element"""
-
-        self.variant_iter.prev()
-        if self.variant_iter.object_index == self.variant_iter.get_max():
-            # pages_iterator jumped to next loop
-            self.group_iter.prev()
-            self._update_variant()
-
-    def current(self) -> HandwrittenPath:
-        return self.variant_iter.current()
-
-    def current_group(self) -> PathGroup:
-        return self.group_iter.current()
-
-    def select(self, group_i: int, variant_i: int = None):
-        """Assignes indices according to arguments if they are in allowed range"""
-        self.group_iter.select(group_i)
-        self._update_variant()
-        self.variant_iter.select(variant_i if variant_i is not None else 0)
-
-    def delete_group(self):
-        if self.group_iter.current() is not None:
-            idx = self.dictionary.remove_group(self.group_iter.object_index)
-            self.group_iter.select(idx)
-            self._update_variant()
-
-    def delete_current(self):
-        if self.group_iter.current() is not None:
-            if self.variant_iter.current() is not None:
-                idx = self.dictionary.remove_variant(self.group_iter.object_index, self.variant_iter.object_index)
-                self.group_iter.select(idx[0])
-                self._update_variant()
-                self.variant_iter.select(idx[1])
+from handwriting.path_management.signature_dictionary_iterator import SignatureDictionaryIterator
 
 
 class SignatureDictionary:
     """
     Contains multiple PathGroup canvas_objects and can give access to any object
-    using PathGroup name and index of an object in that group
+    using PathGroup name and variant_index of an object in that group
 
     composite key
     """
@@ -113,7 +54,7 @@ class SignatureDictionary:
 
     def get_iterator(self):
         """Returns bidirectional pages_iterator for path groups and their variants"""
-        return SignatureDictionaryPathsIterator(self)
+        return SignatureDictionaryIterator(self)
 
     def get_save_path(self, file_name: Path = None):
         return \
@@ -129,8 +70,8 @@ class SignatureDictionary:
 
     def remove_group(self, group_i):
         """
-        Deletes group on current index
-        :return: new group index
+        Deletes group on current variant_index
+        :return: new group variant_index
         """
 
         if 0 <= group_i < len(self.path_groups):
@@ -146,8 +87,8 @@ class SignatureDictionary:
 
         If we deleted all path variants, nothing will change
 
-        :param group_i:     index of group
-        :param variant_i:   index of path variant
+        :param group_i:     variant_index of group
+        :param variant_i:   variant_index of path variant
         :return: returns new indices to replace previous deleted indices
         """
 
@@ -183,4 +124,4 @@ class SignatureDictionary:
         if 0 <= group_index < len(self.path_groups):
             self.path_groups[group_index].append_path(path)
         else:
-            raise ValueError('group index invalid')
+            raise ValueError('group variant_index invalid')

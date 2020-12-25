@@ -12,7 +12,6 @@ from PIL.ImageTk import PhotoImage
 from handwriting.canvas_objects_manager import CanvasObjectsManager
 from handwriting.event_handler import EventManager
 from handwriting.grid_manager import GridManager
-from handwriting.option_menu_manager import OptionMenuManager
 from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
 from handwriting.page_writing.page_manager import PageManager
 from handwriting.path_management.dictionary_manager import DictionaryManager
@@ -21,15 +20,13 @@ from handwriting.path_management.signature_dictionary import SignatureDictionary
 from handwriting.path_management.handwritten_path import HandwrittenPath
 from handwriting.page_writing.anchor_points_handlers import AnchorPointsHandlers
 from handwriting.page_writing.page_button_handlers import PageButtonHandlers
-from handwriting.tkinter_shortcuts import update_integer_field
 
 
 class PageTextWriterApp(tk.Frame,
                         DictionaryManager,
                         CanvasObjectsManager,
                         GridManager,
-                        EventManager,
-                        OptionMenuManager):
+                        EventManager):
 
     msg_not_selected = '-'
     default_pages_directory = Path("pages")
