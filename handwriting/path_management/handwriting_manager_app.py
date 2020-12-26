@@ -29,13 +29,9 @@ class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
         self.brush_size = 5
         self.brush_color = "black"
 
-        # dictionary of path groups with default value
-        self.dictionary = DictionaryManager()
-
-        # current path from self.iterator
-        self.current_path: HandwrittenPath = None
-        # pages_iterator inside path to draw lines
-        self.current_path_iterator: HandwrittenPathLinesIterator = None
+        # dict_manager of path groups with default value
+        self.dict_manager = DictionaryManager()
+        self.cur_path_iterator: HandwrittenPathLinesIterator = None
 
         self._mouse_released = True
 
@@ -169,23 +165,13 @@ class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
             self.update_background_image()
 
     def handle_motion_draw(self, event):
-        """
-        After new point is appended, pages_iterator will be updated and will be able to give another line
-        If this event begins new curve (mouse was previously released and now it was pressed)
-        New_curve is created for path and first point is appended to it
-
-        Only one point is not enough for line, so, for this iteration self.current_path_iterator
-        must not return anything, but point must be appended
-        :param event: tkinter Event object
-        """
-
-        if self.current_path is not None:
+        if self.cur_path_iterator is not None:
             if self._mouse_released:
                 self._mouse_released = False
-                self.current_path.new_curve(Point(event.x, event.y))
+                self.cur_path_iterator.new_curve(Point(event.x, event.y))
             else:
-                self.current_path.append_absolute(Point(event.x, event.y))
-                self.draw_iterator(self.current_path_iterator)
+                self.cur_path_iterator.append_absolute(Point(event.x, event.y))
+                self.draw_iterator_lines(self.cur_path_iterator)
         else:
             messagebox.showinfo("Attention", "You cannot draw path without group. Create new group and path using "
                                              "entries \"Group\" and \"Variant\" and press button \"New path\" "
@@ -198,12 +184,7 @@ class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
     def draw_line(self, point1: Point, point2: Point):
         self.canvas.create_line(point1.x, point1.y, point2.x, point2.y, fill=self.brush_color, width=self.brush_size)
 
-    def draw_iterator(self, path_iterator):
-        """
-        Draws current path lines using HandwrittenPath pages_iterator
-
-        :param path_iterator: pages_iterator for current path
-        """
+    def draw_iterator_lines(self, path_iterator):
         while True:
             try:
                 p1, p2 = next(path_iterator)
@@ -215,84 +196,44 @@ class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
         pass
 
     def handle_group_chosen(self, index):
-        if self.dictionary.exists():
-            self.dictionary.iterator.select(index)
+        if self.dict_manager.exists():
+            self.dict_manager.iterator.select_group(index)
             self.reset_selected_group()
 
     def handle_variant_chosen(self, variant_index):
-        if self.dictionary.exists():
-            group_index = self.dictionary.iterator.group_iter
-            self.dictionary.iterator.select(group_index, variant_index)
+        if self.dict_manager.exists():
+            group_index = self.dict_manager.iterator.group_iter
+            self.dict_manager.iterator.select_group(group_index)
+            self.dict_manager.iterator.select_variant(variant_index)
             self.update_current_path()
             self.update_menu_names()
 
     def reset_selected_group(self):
-        """
-        Function resets resets current group menu and variables
-        """
         self.update_menu_path_variants()
         self.update_current_path()
         self.update_menu_names()
 
-    def update_current_path(self, anchor_point: Point = None):
-        """
-        Function assumes, that self.iterator is not None
+    def update_current_path(self):
+        if self.dict_manager.exists():
+            self.reset_canvas()
+            current_path = self.dict_manager.iterator.current()
 
-        Updates current path variables and applies shift to new path
-        Draws current pages_iterator lines
-
-        :param anchor_point: if anchor_point is not None,
-                            updates absolute position of current path
-        """
-        if self.dictionary.exists():
-            self.current_path = self.paths_iterator.current()
-            if self.current_path is not None:
-                if anchor_point is not None:
-                    self.current_path.set_position(anchor_point)
-                else:
-                    self.current_path.set_position(self.get_shift_point())
-                self.current_path_iterator = iter(self.current_path)
-
-                self.reset_canvas()
-                self.draw_iterator(self.current_path_iterator)
-            else:
-                self.reset_canvas()
+            if current_path is not None:
+                current_path.set_position(self.get_shift_point())
+                self.cur_path_iterator = iter(current_path)
+                self.draw_iterator_lines(self.cur_path_iterator)
 
     def handle_create_new_path(self, event=None):
-        """
-        If current group name not in paths dictionary, creates new paths group
-        else, selects current path group and creates new path with specifyed name
+        if not self.dict_manager.exists():
+            return
 
-        Creates new empty to current path group using default (or specifyed) additional name
-        """
         group_name = self.entry_new_group.get()
-        group_index = None
-        for group_i in range(len(self.dictionary_groups)):
-            if group_name == self.dictionary_groups[group_i].name:
-                group_index = group_i
-                break
-
-        if group_index is None:
-            # create new group with desired name
-            if self.check_name_valid(group_name):
-                self.dictionary_groups.append_group(PathGroup(group_name))
-                group_index = len(self.dictionary_groups) - 1
-                self.update_menu_groups()
-            else:
-                messagebox.showinfo("Group name invalid", "name must be a single line\nwith length no more than 128")
+        if not self.dict_manager.dictionary.check_group_exists(group_name):
+            if not self.create_new_group(group_name):
                 return
 
-        self.paths_iterator.select(group_index)
         path_name = self.entry_new_variant.get()
-        if self.check_name_valid(path_name):
-            self.paths_iterator.current_group().append_path(HandwrittenPath(path_name))
-            self.paths_iterator.select(group_index, len(self.paths_iterator.current_group()) - 1)
-
-            # may be problem with path with no curves
-            self.update_current_path()
-            self.update_menu_path_variants()
-        else:
-            messagebox.showinfo("Path name invalid", "name must be a single line\nwith length no more than 128")
+        if not self.create_new_path_variant(path_name):
             return
 
         self.update_menu_names()
@@ -303,24 +244,22 @@ class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
         self.root.focus()
 
     def handle_clear_path(self, event=None):
-        """Sets new path instead of current chosen letter"""
-        if self.dictionary.exists():
-            if self.paths_iterator.current() is not None:
-                self.paths_iterator.current().components = []
+        if self.dict_manager.exists():
+            if self.dict_manager.iterator.current() is not None:
+                self.dict_manager.iterator.current().components = []
                 self.update_current_path()
 
     def handle_delete_group(self):
-        """Removes current group from dictionary"""
-        self.paths_iterator.delete_group()
-        self.update_current_path()
-        self.update_menu_names()
-        self.update_menu_groups()
+        if self.dict_manager.exists():
+            self.dict_manager.iterator.delete_group()
+            self.update_current_path()
+            self.update_menu_names()
+            self.update_menu_groups()
 
     def handle_delete_path(self, event=None):
-        """Removes current path from selected path group"""
-        if self.paths_iterator.current_group() is not None:
-            if len(self.paths_iterator.current_group()) > 0:
-                self.paths_iterator.delete_current()
+        if self.dict_manager.exists() is not None:
+            if len(self.dict_manager.iterator.current_group()) > 0:
+                self.dict_manager.iterator.delete_current()
                 self.update_current_path()
                 self.update_menu_names()
                 self.update_menu_path_variants()
@@ -328,85 +267,73 @@ class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
                 self.handle_delete_group()
 
     def handle_next_letter(self, event=None):
-        if self.dictionary.exists():
-            prev_group = self.paths_iterator.group_iter
+        if self.dict_manager.exists():
+            prev_group = self.dict_manager.iterator.group_iter
 
-            self.paths_iterator.next()
+            self.dict_manager.iterator.next()
             self.update_current_path()
             self.update_menu_names()
 
-            if self.paths_iterator.group_iter != prev_group:
+            if self.dict_manager.iterator.group_iter != prev_group:
                 self.update_menu_path_variants()
 
     def handle_prev_letter(self, event=None):
-        if self.dictionary.exists():
-            prev_group = self.paths_iterator.group_iter
+        if self.dict_manager.exists():
+            prev_group = self.dict_manager.iterator.group_iter
 
-            self.paths_iterator.prev()
+            self.dict_manager.iterator.prev()
             self.update_current_path()
             self.update_menu_names()
 
-            if self.paths_iterator.group_iter != prev_group:
+            if self.dict_manager.iterator.group_iter != prev_group:
                 self.update_menu_path_variants()
 
     def update_menu_groups(self):
-        """
-        If self.dictionary_groups is None, than sets default name for list and clears all previous options
-        """
+        group_choices = None
+        if self.dict_manager.exists():
+            all_groups = self.dict_manager.dictionary.path_groups
+            group_choices = {all_groups[i].name: i for i in range(len(all_groups))}
 
-        choices = None
-        if self.dictionary_groups is not None:
-            choices = {self.dictionary_groups.path_groups[i].name: i for i in range(len(self.dictionary_groups))}
-
-        self.menu_path_group.update_choices(choices)
+        self.menu_path_group.update_choices(group_choices)
 
     def update_menu_path_variants(self):
-        """
-        If self.dictionary_groups is None, than sets default name for list and clears all previous options
-        """
-
         choices = None
-        if self.dictionary_groups is not None:
-            group = self.paths_iterator.current_group()
+        if self.dict_manager.exists():
+            group = self.dict_manager.iterator.current_group()
             if group is not None:
                 choices = {group[i].name: i for i in range(len(group))}
 
         self.menu_path_variant.update_choices(choices)
 
     def update_menu_names(self):
-        if self.dictionary.exists():
-            group = self.paths_iterator.current_group()
-            path = self.paths_iterator.current()
-
-            self.menu_path_group.set(group.name if group is not None else None)
-
-            if path is not None:
-                variant_index = self.paths_iterator.variant_iter.object_index + 1
-                self.menu_path_variant.set_indexed_name(variant_index, path.name)
-            else:
-                self.menu_path_variant.set(None)
-
+        if self.dict_manager.exists():
+            current_group = self.dict_manager.iterator.current_group()
+            current_variant = self.dict_manager.iterator.current()
+            self.menu_path_group.set(current_group.name if current_group is not None else None)
+            self.update_menu_variant_name(current_variant)
         else:
             self.menu_path_group.set(None)
             self.menu_path_variant.set(None)
 
-    # working with dictionary file
-    def open_dictionary_from_entry_path(self, event=None):
-        self.root.focus()
+    def update_menu_variant_name(self, path):
+        if path is not None:
+            variant_index = self.dict_manager.iterator.variant_iter.object_index + 1
+            self.menu_path_variant.set_indexed_name(variant_index, path.name)
+        else:
+            self.menu_path_variant.set(None)
 
-        new_path = self.dictionary.read_from_file(self.entry_dict_file.get())
+    def open_dictionary_from_entry_path(self, event=None):
+        new_path = self.dict_manager.read_from_file(self.entry_dict_file.get())
         self.entry_dict_file.set(str(new_path))
 
+        self.root.focus()
         self.update_menu_groups()
         self.reset_selected_group()
 
     def save_dictionary_to_file(self):
-        if self.dictionary_groups is not None:
-            self.dictionary_groups.save_file(
-                self.get_dictionary_file_path(self.entry_dict_file)
-            )
+        if self.dict_manager.exists():
+            self.dict_manager.save_file(self.entry_dict_file.get())
 
-    # other methods
     def get_shift_point(self):
         return Point(self.entry_shift_x.get(), self.entry_shift_y.get())
 
@@ -414,6 +341,28 @@ class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
     def check_name_valid(name):
         """Checks if name for HandwrittenPath or SignatureDictionary can be written to file and is one line"""
         return all((i not in name for i in '\t\n')) and len(name) <= 128
+
+    def create_new_group(self, group_name):
+        if self.check_name_valid(group_name):
+            self.dict_manager.dictionary.append_group(PathGroup(group_name))
+            self.update_menu_groups()
+            return True
+        else:
+            messagebox.showinfo("Group name invalid", "name must be a single line\nwith length no more than 128")
+            return False
+
+    def create_new_path_variant(self, path_name):
+        if self.check_name_valid(path_name):
+            current_group = self.dict_manager.iterator.current_group()
+            current_group.append_path(HandwrittenPath(path_name))
+            self.dict_manager.iterator.select_variant(len(current_group) - 1)
+
+            self.update_current_path()
+            self.update_menu_path_variants()
+            return True
+        else:
+            messagebox.showinfo("Path name invalid", "name must be a single line\nwith length no more than 128")
+            return False
 
 
 def main():

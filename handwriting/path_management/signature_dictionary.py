@@ -17,16 +17,16 @@ class SignatureDictionary:
 
     def __init__(self, name='', path_groups: list = None):
         """
-        We transform path groups list to internal dictionary
+        We transform path groups list to internal dict_manager
         to enable access by indexing
         :param name:
         :param path_groups:
         """
         self.name = name
 
-        # dictionary holds indices of path_groups list
+        # dict_manager holds indices of path_groups list
         self.path_groups = path_groups if path_groups is not None else []
-        self.groups_dict = {group.name: group for group in self.path_groups}
+        self.path_groups_dict = {group.name: group for group in self.path_groups}
 
     def __len__(self):
         return len(self.path_groups)
@@ -34,13 +34,13 @@ class SignatureDictionary:
     def __str__(self):
         return f"{self.name}: {len(self.path_groups)}"
 
-    def __getitem__(self, group_name):
-        if isinstance(group_name, str):
-            if group_name in self.groups_dict:
-                return self.groups_dict[group_name]
-        elif isinstance(group_name, int):
-            if 0 <= group_name < len(self.path_groups):
-                return self.path_groups[group_name]
+    def __getitem__(self, group_id):
+        if isinstance(group_id, str):
+            if group_id in self.path_groups_dict:
+                return self.path_groups_dict[group_id]
+        elif isinstance(group_id, int):
+            if 0 <= group_id < len(self.path_groups):
+                return self.path_groups[group_id]
         return None
 
     def __contains__(self, item):
@@ -75,8 +75,8 @@ class SignatureDictionary:
         """
 
         if 0 <= group_i < len(self.path_groups):
-            if self.path_groups[group_i].name in self.groups_dict:
-                del self.groups_dict[self.path_groups[group_i].name]
+            if self.path_groups[group_i].name in self.path_groups_dict:
+                del self.path_groups_dict[self.path_groups[group_i].name]
             self.path_groups.pop(group_i)
             return group_i % len(self.path_groups) if len(self.path_groups) > 0 else 0
         return 0
@@ -118,10 +118,19 @@ class SignatureDictionary:
 
     def append_group(self, path_group):
         self.path_groups.append(path_group)
-        self.groups_dict[path_group.name] = path_group
+        self.path_groups_dict[path_group.name] = path_group
 
     def append_path(self, group_index, path):
         if 0 <= group_index < len(self.path_groups):
             self.path_groups[group_index].append_path(path)
         else:
             raise ValueError('group variant_index invalid')
+
+    def check_group_exists(self, group_name):
+        return group_name in self.path_groups_dict
+
+    def get_group_index_by_name(self, group_name):
+        if group_name in self.path_groups_dict:
+            return list(self.path_groups_dict.keys()).index(group_name)
+        else:
+            return None

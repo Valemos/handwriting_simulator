@@ -132,7 +132,7 @@ class PageTextWriterApp(tk.Frame,
         entry_space_sz = tk.Entry(root, width=grid_width, textvariable=self.space_sz_var)
         self.entry_draw_text = tk.Text(root, width=grid_width * 2 - 8, height=20)
 
-        btn_open_dict = tk.Button(root, text="Open dictionary", width=grid_width,
+        btn_open_dict = tk.Button(root, text="Open dict_manager", width=grid_width,
                                   command=self.open_dictionary)
 
         btn_open_pages = tk.Button(root, text="Open pages", width=grid_width,

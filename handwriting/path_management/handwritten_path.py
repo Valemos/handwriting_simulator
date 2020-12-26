@@ -35,21 +35,29 @@ class HandwrittenPathLinesIterator:
                 # go one step forward in curves list
                 if self.curve_index < len(self.path) - 1:
                     self.curve_index += 1
+                    self.start_iterating_next_line()
                 else:
                     raise StopIteration
 
-                # save previous absolute position to next curve to iteratre relative to new absolute position
-                self.point_iterator = self.path[self.curve_index].get_shifted_iterator(self.prev_point)
-                if len(self.path[self.curve_index]) == 1:
-                    # if there are only one point in curve, we must draw line from point to itself
-                    # on the next iteration this curve will be skipped
-                    self.prev_point = next(self.point_iterator)
-                    self.cur_point = self.prev_point
-                else:
-                    self.prev_point = next(self.point_iterator)
-                    self.cur_point = next(self.point_iterator)
-
         return self.prev_point, self.cur_point
+
+    def start_iterating_next_line(self):
+        self.point_iterator = self.get_curve_iterator()
+        if len(self.path[self.curve_index]) == 1:
+            self.prev_point = next(self.point_iterator)
+            self.cur_point = self.prev_point
+        else:
+            self.prev_point = next(self.point_iterator)
+            self.cur_point = next(self.point_iterator)
+
+    def get_curve_iterator(self):
+        return self.path[self.curve_index].get_shifted_iterator(self.prev_point)
+
+    def new_curve(self, point):
+        self.path.new_curve(point)
+
+    def append_absolute(self, point):
+        self.path.append_absolute(point)
 
 
 class HandwrittenPath(StreamSavableCollection):
@@ -68,10 +76,6 @@ class HandwrittenPath(StreamSavableCollection):
         return len(self.components)
 
     def __iter__(self):
-        """
-        This pages_iterator changes last_absolute_point values inside Curves according to new object position
-        :return: pages_iterator
-        """
         return HandwrittenPathLinesIterator(self)
 
     def __getitem__(self, i):
@@ -98,33 +102,15 @@ class HandwrittenPath(StreamSavableCollection):
             return Point(0, 0)
 
     def new_curve(self, first_point):
-        """
-        This handler must be called after user click
-        Creates new curve, to write shifts to it
-
-        Also if this curve is not first, calculates shift relative to end of last curve
-
-        :param first_point: next absolute point to start Curve with
-        """
-
         curve = Curve()
         curve.calc_last_point(self.components[-1].last_absolute_point if len(self.components) > 0 else None)
         curve.append_absolute(first_point)
         self.components.append(curve)
 
     def append_shift(self, point: Point):
-        """
-        Appends shift point relative to last curve
-        :param point: shift amount
-        """
         self.components[-1].append_shift(point)
 
     def append_absolute(self, point: Point):
-        """
-        Appends absolute value of point to last curve
-        :param point: absolute position
-        """
-
         if len(self.components) > 0:
             self.components[-1].append_absolute(point)
         else:

@@ -17,7 +17,7 @@ class MenuWithHandler(tk.OptionMenu):
 
     def update_choices(self, new_choices: dict):
         """
-        Values in dictionary will be passed to handler function
+        Values in dict_manager will be passed to handler function
         """
 
         self['menu'].delete(0, 'end')  # delete all elements from menu

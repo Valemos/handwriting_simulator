@@ -18,8 +18,6 @@ class SignatureDictionaryIterator:
             self.variant_iter = EmptyCyclicIterator()
 
     def next(self) -> HandwrittenPath:
-        """Iterates one step forward"""
-
         self.variant_iter.next()
         if self.variant_iter.object_index == 0:
             # pages_iterator jumped to next loop
@@ -27,8 +25,6 @@ class SignatureDictionaryIterator:
             self._update_variant()
 
     def prev(self) -> HandwrittenPath:
-        """Iterates step backwards and returns current element"""
-
         self.variant_iter.prev()
         if self.variant_iter.object_index == self.variant_iter.get_max():
             # pages_iterator jumped to next loop
@@ -41,11 +37,12 @@ class SignatureDictionaryIterator:
     def current_group(self) -> PathGroup:
         return self.group_iter.current()
 
-    def select(self, group_i: int, variant_i: int = None):
-        """Assignes indices according to arguments if they are in allowed range"""
+    def select_group(self, group_i: int):
         self.group_iter.select(group_i)
         self._update_variant()
-        self.variant_iter.select(variant_i if variant_i is not None else 0)
+
+    def select_variant(self, variant_i: int):
+        self.variant_iter.select(variant_i)
 
     def delete_group(self):
         if self.group_iter.current() is not None:
