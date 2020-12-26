@@ -24,3 +24,6 @@ class EntryIntegerWithLabel(EntryWithLabel):
     def get(self):
         self.update_integer_field(self.str_variable)
         return int(self.str_variable.get())
+
+    def set(self, value: int):
+        self.str_variable.set(str(value))

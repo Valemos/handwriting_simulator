@@ -1,6 +1,6 @@
 from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
 
-class PageButtonHandlers(ButtonHandlerGroup):
+class PageSwitchHandlers(ButtonHandlerGroup):
 
     @staticmethod
     def left(app):

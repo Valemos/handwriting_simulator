@@ -13,11 +13,10 @@ class AnchorManager:
     defining required transformations to fit letters on this page
     """
 
-    def __init__(self, page):
+    def __init__(self, canvas, page):
         self.page = page
 
-        # this function is passed as argument to AnchorManager with canvas object
-        # it must return list of canvas objects that was drawn by it
+        self.canvas = canvas
         self.canvas_objects = {}
         self.temp_point = Point(0, 0)
 
@@ -27,63 +26,37 @@ class AnchorManager:
 
         self.line_iterator = ExtendingIterator(self.point_iterators)
 
-    def set_canvas_draw(self, canvas, draw_function):
-        """
-        Sets canvas to work with for next draw object manipulation
-        :param canvas: tkinter canvas object
-        :param draw_function: function, that takes as arguments (Canvas, Point) objects
-        """
-        self.canvas = canvas
-        self.draw_function = draw_function
-
     def save_page_points(self):
-        """
-        Uses values from iterators and assigns them to current page object
-        """
-
         if self.line_iterator is not None:
             self.page.lines_points = [it.object_list for it in self.point_iterators]
             self.point_iterators = None
             self.line_iterator = None
 
     def draw_all(self):
-        """
-        Draws all points on canvas
-        stores canvas objects in internal map for future redraw updates of that point
-        """
-
         self.delete_all_canvas_objects()
+        self.redraw_all_points()
+
+    def redraw_all_points(self):
         for row in self.line_iterator.object_list:
             for point in row:
                 if point is not None:
                     self.redraw_point(point)
-
-    def delete_current_canvas_objects(self):
-        """
-        this function assumes, that self.line_iterator and self.line_iterator.current() is not None
-        Deletes current point canvas objects from canvas
-        """
-        cur = self.line_iterator.current().current()
-        if cur is not None:
-            for obj in self.canvas_objects[cur]:
-                self.canvas.delete(obj)
-            del self.canvas_objects[cur]
-
-    def delete_all_canvas_objects(self):
-        for point in list(self.canvas_objects.keys()):
-            self.delete_point_canvas_objects(point)
 
     def delete_point_canvas_objects(self, point: Point):
         for obj in self.canvas_objects[point]:
             self.canvas.delete(obj)
         del self.canvas_objects[point]
 
-    def redraw_pointer_point(self, new_position: Point):
-        """
-        Removes Canvas objects and draws them again on the new position
-        :param new_position: new point position to update current point with
-        """
+    def delete_all_canvas_objects(self):
+        for point in list(self.canvas_objects.keys()):
+            self.delete_point_canvas_objects(point)
 
+    def delete_current_canvas_objects(self):
+        current_point = self.line_iterator.current().current()
+        if current_point is not None:
+            self.delete_point_canvas_objects(current_point)
+
+    def redraw_pointer_point(self, new_position: Point):
         if self.line_iterator is not None:
             self.redraw_temp_point(new_position)
             cur_point = self.line_iterator.current().current()
@@ -98,10 +71,19 @@ class AnchorManager:
         self.temp_point.y = pos.y
         self.redraw_point(self.temp_point, "red")
 
+    @staticmethod
+    def draw_point_scope(canvas, point, color="black"):
+        lst = []
+        r = 10
+        lst.append(canvas.create_oval((point.x - r, point.y - r, point.x + r, point.y + r), outline=color))
+        lst.append(canvas.create_line(point.x, point.y - r, point.x, point.y + r, fill=color))
+        lst.append(canvas.create_line(point.x - r, point.y, point.x + r, point.y, fill=color))
+        return lst
+
     def redraw_point(self, point, color="black"):
         if point in self.canvas_objects:
             self.delete_point_canvas_objects(point)
-        self.canvas_objects[point] = self.draw_function(self.canvas, point, color)
+        self.canvas_objects[point] = self.draw_point_scope(self.canvas, point, color)
 
     def redraw_current_point_black(self):
         cur = self.line_iterator.current().current()
@@ -109,8 +91,6 @@ class AnchorManager:
             self.redraw_point(cur)
 
     def move_up(self):
-        """Move up in points iterator"""
-
         if self.line_iterator is not None:
             self.redraw_current_point_black()
             self.line_iterator.prev()
@@ -118,8 +98,6 @@ class AnchorManager:
                 self.line_iterator.set_current(ExtendingIterator([]))
 
     def move_down(self):
-        """Move up in points iterators"""
-
         if self.line_iterator is not None:
             self.redraw_current_point_black()
             self.line_iterator.next()
@@ -127,31 +105,21 @@ class AnchorManager:
                 self.line_iterator.set_current(ExtendingIterator([]))
 
     def move_left(self):
-        """Move up in points iterators"""
-
         if self.line_iterator is not None:
             if self.line_iterator.current() is not None:
                 self.redraw_current_point_black()
                 self.line_iterator.current().prev()
 
     def move_right(self):
-        """Move up in points iterators"""
-
         if self.line_iterator is not None:
             if self.line_iterator.current() is not None:
                 self.redraw_current_point_black()
                 self.line_iterator.current().next()
 
     def delete_current_point(self):
-        """
-        Removes current point from sequence if it exists
-        updates all necessary objects
-        """
         if self.line_iterator is not None:
             if self.line_iterator.current() is not None:
-                cur_point = self.line_iterator.current().current()
-                if cur_point is not None:
-                    self.delete_point_canvas_objects(cur_point)
+                self.delete_current_canvas_objects()
                 self.line_iterator.current().delete_current()
 
     def update_current_point(self, point: Point):
@@ -177,16 +145,10 @@ class AnchorManager:
                 return self.line_iterator.current().current()
         return None
 
-    # line modification
     def add_intermediate_lines(self, top_index, bot_index, line_count):
         """
         Top line is taken as guide for letters from next line
         Every next line uses previous line to guide letters in right way
-
-        :param top_index: variant_index of top line to take points from
-        :param bot_index: variant_index of bottom line to take points from
-        :param line_count: number of total lines to end up with
-        :return: True if lines were added, False otherwise
         """
 
         if self.line_iterator is None or top_index == bot_index:
@@ -195,17 +157,12 @@ class AnchorManager:
         self.remove_empty_points(self.line_iterator[top_index])
         self.remove_empty_points(self.line_iterator[bot_index])
 
-        if top_index not in self.line_iterator or bot_index not in self.line_iterator:
-            return False
-
-        if len(self.line_iterator[top_index]) > len(self.line_iterator[bot_index]):
+        if not self.check_can_create_intermediate_lines(bot_index, top_index):
             return False
 
         first_line = self.line_iterator[top_index]
         last_line = self.line_iterator[bot_index]
-        for i in range(top_index + 1, top_index + line_count):
-            self.line_iterator.object_list.insert(i, ExtendingIterator([]))
-
+        self.insert_empty_lines(top_index, line_count)
 
         for point_i in range(len(first_line)):
             # create intermediate points
@@ -219,6 +176,19 @@ class AnchorManager:
 
         self.draw_all()
         return True
+
+    def check_can_create_intermediate_lines(self, bot_index, top_index):
+        if top_index not in self.line_iterator or bot_index not in self.line_iterator:
+            return False
+
+        if len(self.line_iterator[top_index]) > len(self.line_iterator[bot_index]):
+            return False
+
+        return True
+
+    def insert_empty_lines(self, start_index, line_count):
+        for i in range(start_index + 1, start_index + line_count):
+            self.line_iterator.object_list.insert(i, ExtendingIterator([]))
 
     @staticmethod
     def remove_empty_points(iterator: ExtendingIterator):

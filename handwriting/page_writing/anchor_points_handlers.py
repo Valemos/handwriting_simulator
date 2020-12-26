@@ -1,6 +1,6 @@
 from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
 
-class AnchorPointsHandlers(ButtonHandlerGroup):
+class AnchorPointHandlers(ButtonHandlerGroup):
 
     @staticmethod
     def left(app):

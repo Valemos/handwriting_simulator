@@ -11,20 +11,8 @@ class DictionaryManager:
         self.dictionary: SignatureDictionary = None
         self.iterator: SignatureDictionaryIterator = None
 
-    @staticmethod
-    def read_dictionary_file(file_path):
-        """
-        Returns signature dict_manager and dict_manager irerator
-        if cannot open file, returns (None, None)
-        """
-        dct = SignatureDictionary.from_file(file_path)
-        it = None
-        if dct is not None:
-            it = dct.get_iterator()
-        return dct, it
-
     @classmethod
-    def get_dictionary_file_path(cls, path_str=None):
+    def get_dictionary_file_path(cls, path_str):
         file_path = Path(path_str)
         if not cls.is_valid_dictionary_path(file_path):
             file_path = filedialog.askopenfilename()
@@ -53,7 +41,12 @@ class DictionaryManager:
 
     def read_from_file(self, file_string):
         dict_file = self.get_dictionary_file_path(file_string)
-        self.dictionary, self.iterator = self.read_dictionary_file(dict_file)
+
+        self.dictionary = SignatureDictionary.from_file(dict_file)
+        self.iterator = None
+        if self.dictionary is not None:
+            self.iterator = self.dictionary.get_iterator()
+
         return dict_file
 
     def save_file(self, file_name):
