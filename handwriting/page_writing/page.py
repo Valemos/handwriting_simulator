@@ -24,11 +24,6 @@ class Page(LengthObjectSerializer):
         self.image_text = None
         self.name = name if name is not None else ''
 
-        """
-        This is list of lists, where for every line on page
-        are defined set of points along the line
-        to transform letter paths as if they were written on that line
-        """
         self.lines_points = [[]]
 
     @classmethod
@@ -56,12 +51,6 @@ class Page(LengthObjectSerializer):
         self.name = name
 
     def save_file(self):
-        """
-        data about page will be saved in separate folder in parent folder where image_initial is located
-
-        saves image_initial to page file to reuse it in future page usages.
-        """
-
         if self.save_path is not None:
             if not self.save_path.exists():
                 self.save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -112,5 +101,6 @@ class Page(LengthObjectSerializer):
     def set_current_image_text(self):
         self.current_image = self.image_text
 
-    def create_text_image(self):
+    def get_new_text_image(self):
         self.current_image = self.image_initial.copy()
+        return self.current_image

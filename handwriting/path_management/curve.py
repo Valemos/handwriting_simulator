@@ -60,7 +60,7 @@ class Curve(StreamSavable):
     def __getitem__(self, i):
         return self.components[i]
 
-    def get_shifted_iterator(self, shift: Point = None):
+    def get_shifted_iterator(self, shift: Point = None) -> CurveIterator:
         return CurveIterator(self, shift)
 
     def get_position(self):

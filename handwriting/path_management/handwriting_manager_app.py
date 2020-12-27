@@ -11,7 +11,8 @@ from handwriting.gui_parts.left_right_buttons import LeftRightButtons
 from handwriting.gui_parts.menu_indexed_with_handler import MenuIndexedWithHandler
 from handwriting.gui_parts.menu_with_handler import MenuWithHandler
 from handwriting.path_management.point import Point
-from handwriting.path_management.handwritten_path import HandwrittenPath, HandwrittenPathLinesIterator
+from handwriting.path_management.handwritten_path import HandwrittenPath
+from handwriting.path_management.path_lines_iterator import PathLinesIterator
 from handwriting.path_management.path_group import PathGroup
 from handwriting.path_management.dictionary_manager import DictionaryManager
 from handwriting.grid_manager import GridManager
@@ -31,7 +32,7 @@ class HandwritingShiftModifyer(tk.Frame, GridManager, EventManager):
 
         # dict_manager of path groups with default value
         self.dict_manager = DictionaryManager()
-        self.cur_path_iterator: HandwrittenPathLinesIterator = None
+        self.cur_path_iterator: PathLinesIterator = None
 
         self._mouse_released = True
 

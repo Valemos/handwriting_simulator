@@ -43,9 +43,7 @@ class DictionaryManager:
         dict_file = self.get_dictionary_file_path(file_string)
 
         self.dictionary = SignatureDictionary.from_file(dict_file)
-        self.iterator = None
-        if self.dictionary is not None:
-            self.iterator = self.dictionary.get_iterator()
+        self.iterator = self.dictionary.get_iterator() if self.dictionary is not None else None
 
         return dict_file
 
@@ -54,7 +52,7 @@ class DictionaryManager:
         self.dictionary.save_file(save_path)
 
     def exists(self):
-        return self.iterator is not None
+        return self.dictionary is not None
 
     def size(self):
         if self.dictionary is not None:

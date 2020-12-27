@@ -20,6 +20,7 @@ from handwriting.gui_parts.menu_with_handler import MenuWithHandler
 from handwriting.page_writing.anchor_points_handlers import AnchorPointHandlers
 from handwriting.page_writing.arrow_button_handlers import ArrowButtonHandlers
 from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
+from handwriting.page_writing.handwritten_text_writer import HandwrittenTextWriter
 from handwriting.page_writing.page_button_handlers import PageSwitchHandlers
 from handwriting.page_writing.page_manager import PageManager
 from handwriting.path_management.dictionary_manager import DictionaryManager
@@ -390,33 +391,18 @@ class PageTextWriterApp(tk.Frame,
             self.menu_pages.set(self.pages_manager.current_page().name)
 
     def handle_draw_text(self):
-        self.pages_manager.current_page().create_text_image()
-        self.draw_text_on_image(self.entry_draw_text.get(1.0, tk.END),
-                                self.pages_manager.current_page().current_image)
+        text = self.entry_draw_text.get(1.0, tk.END)
+        self.draw_text_on_page(text, self.pages_manager.current_page())
         self.update_current_page()
 
-    def draw_text_on_image(self, text, image):
-        if self.dictionary_manager is None:
+    def draw_text_on_page(self, text, page):
+        if not self.dictionary_manager.exists():
             return
 
-        # create path from letter paths
-        total_path_curves = []
-        for char in text:
-            path_group = self.dictionary_manager.dictionary[char]
-            if path_group is not None:
-                path_index = random.randrange(0, len(path_group) - 1)
-                path_group[path_index].set_position(Point(0, 0))
-                total_path_curves.extend(path_group[path_index].components)
-            else:
-                print(f"char not found \"{char}\"")
+        text_drawer = HandwrittenTextWriter(page, self.dictionary_manager.dictionary)
 
-        draw = ImageDraw.Draw(image)
-        total_path = HandwrittenPath("text", total_path_curves)
-
-        # todo write working version for text writing
-        total_path.set_position(Point(100, 400))
-
-        for p1, p2 in total_path:
+        draw = ImageDraw.Draw(page)
+        for p1, p2 in text_drawer.write_text(text):
             draw.line((*p1, *p2), fill=0, width=4)
 
     def update_pages(self, file_path):
