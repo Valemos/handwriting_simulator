@@ -6,8 +6,8 @@ from unittest.mock import patch
 import sys
 sys.path.append(r"D:\coding\Python_codes\Handwriting_extractor_project")
 
-from handwriting.path_management.path_group import PathGroup
-from handwriting.path_management.signature_dictionary import SignatureDictionary
+from handwriting.path.path_group import PathGroup
+from handwriting.path.signature_dictionary import SignatureDictionary
 
 
 class TestDictionary(unittest.TestCase):
@@ -20,4 +20,5 @@ class TestDictionary(unittest.TestCase):
         for i in range(100):
             print(it.group_iter, it.variant_iter)
             it.prev()
+
 

@@ -1,5 +1,5 @@
 from handwriting.extending_iterator import ExtendingIterator
-from handwriting.path_management.point import Point
+from handwriting.path.curve.point import Point
 
 
 class AnchorManager:
@@ -28,7 +28,7 @@ class AnchorManager:
 
     def save_page_points(self):
         if self.line_iterator is not None:
-            self.page.lines_points = [it.object_list for it in self.point_iterators]
+            self.page.lines_points = [it.objects for it in self.point_iterators]
             self.point_iterators = None
             self.line_iterator = None
 

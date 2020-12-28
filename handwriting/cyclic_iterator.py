@@ -9,29 +9,38 @@ class CyclicIterator:
     """
 
     def __init__(self, object_list):
-        self.object_list = object_list
-        self.object_index = 0
+        self.objects = object_list
+        self.index = 0
 
     def get_max(self):
-        return len(self.object_list)
+        return len(self.objects)
 
     def next(self):
-        if 0 <= self.object_index < len(self.object_list):
-            self.object_index = step_forwards(self.object_index, len(self.object_list) - 1)
+        if len(self.objects) > 0:
+            self.index = step_forwards(self.index, len(self.objects) - 1)
         else:
-            self.object_index = 0
+            self.index = 0
 
     def prev(self):
-        if 0 <= self.object_index < len(self.object_list):
-            self.object_index = step_backwards(self.object_index, len(self.object_list) - 1)
+        if len(self.objects) > 0:
+            self.index = step_backwards(self.index, len(self.objects) - 1)
         else:
-            self.object_index = 0
+            self.index = 0
 
     def select(self, index):
-        if 0 <= index < len(self.object_list):
-            self.object_index = index
+        if self.in_bounds(index):
+            self.index = index
 
     def current(self):
-        if 0 <= self.object_index < len(self.object_list):
-            return self.object_list[self.object_index]
+        if self.in_bounds(self.index):
+            return self.objects[self.index]
         return None
+
+    def in_bounds(self, index):
+        return 0 <= index < len(self.objects)
+
+    def is_first(self):
+        return self.index == 0
+
+    def is_last(self):
+        return self.index == len(self.objects) - 1

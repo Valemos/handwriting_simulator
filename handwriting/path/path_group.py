@@ -1,51 +1,34 @@
 from pathlib import Path
 
-from handwriting.path_management.stream_savable_collection import StreamSavableCollection
-from handwriting.path_management.handwritten_path import HandwrittenPath
+from handwriting.path.handwritten_path import HandwrittenPath
 from handwriting.cyclic_iterator import CyclicIterator
+from handwriting.path.stream_savable_collection import IStreamSavableCollection
 
-class PathGroup(StreamSavableCollection):
+
+class PathGroup(IStreamSavableCollection):
     """contains several versions of the same handwritten path"""
 
     save_file_format = "{0}.hndw"
-    temp_file = Path("temp.bin")
-
-    child_class = HandwrittenPath
+    default_file_name = 'paths'
 
     def __init__(self, name, paths=None, save_file=None):
-        super().__init__(paths if paths is not None else [])
+        super().__init__(paths)
 
         self.name = name
-        self.initialize_save_path(save_file)
+        self.save_file = save_file
+        self.initialize_save_path(self.save_file)
 
     def __str__(self):
         return f"{self.name}: {len(self.components)}"
-
-    def __getitem__(self, i):
-        """
-        :param i:   variant_index of object to get from group
-        :return:    path on this variant_index
-        """
-        return self.components[i]
-
-    def __len__(self):
-        return len(self.components)
 
     def get_iterator(self):
         return CyclicIterator(self.components)
 
     def initialize_save_path(self, save_file=None):
         if save_file is None:
-            self.save_file = Path(self.save_file_format.format('components' if self.name == '' else self.name))
+            self.save_file = Path(self.save_file_format.format(self.default_file_name if self.name == '' else self.name))
         else:
             self.save_file = save_file
-
-    @staticmethod
-    def read_name(stream):
-        return PathGroup.stream_read_str(stream)
-
-    def write_name(self, stream):
-        PathGroup.stream_write_str(stream, self.name)
 
     def append_path(self, another_path: HandwrittenPath):
         """
@@ -76,7 +59,7 @@ class PathGroup(StreamSavableCollection):
         self.components.pop(index)
 
     def empty(self):
-        return self.name == '' and super().empty()
+        return self.name == '' and len(self.components) > 0
 
     @staticmethod
     def empty_instance():

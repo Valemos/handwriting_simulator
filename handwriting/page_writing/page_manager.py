@@ -1,8 +1,6 @@
 from pathlib import Path
 
-from handwriting.extending_iterator import ExtendingIterator
 from handwriting.page_writing.anchor_manager import AnchorManager
-from handwriting.path_management.point import Point
 from handwriting.cyclic_iterator import CyclicIterator
 from handwriting.page_writing.page import Page
 
@@ -48,7 +46,7 @@ class PageManager:
 
     def delete_current_page(self):
         if self.pages_iterator.current() is not None:
-            self.pages.pop(self.pages_iterator.object_index)
+            self.pages.pop(self.pages_iterator.index)
             self.pages_iterator.prev()
 
     def select_page(self, index):
@@ -63,7 +61,7 @@ class PageManager:
         """
         # read all binary pages
         self.pages = Page.read_pages(directory_path)
-        prev_i = self.pages_iterator.object_index
+        prev_i = self.pages_iterator.index
         self.pages_iterator = CyclicIterator(self.pages)
         self.pages_iterator.select(prev_i)
 
@@ -83,7 +81,7 @@ class PageManager:
                 if new_page is not None:
                     self.pages.append(new_page)
 
-        prev_i = self.pages_iterator.object_index
+        prev_i = self.pages_iterator.index
         self.pages_iterator = CyclicIterator(self.pages)
         self.pages_iterator.select(prev_i)
 

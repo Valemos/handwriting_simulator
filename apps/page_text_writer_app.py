@@ -1,4 +1,3 @@
-import random
 import threading
 import tkinter as tk
 from math import sqrt
@@ -23,17 +22,15 @@ from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
 from handwriting.page_writing.handwritten_text_writer import HandwrittenTextWriter
 from handwriting.page_writing.page_button_handlers import PageSwitchHandlers
 from handwriting.page_writing.page_manager import PageManager
-from handwriting.path_management.dictionary_manager import DictionaryManager
-from handwriting.path_management.handwritten_path import HandwrittenPath
-from handwriting.path_management.point import Point
+from handwriting.path.dictionary_manager import DictionaryManager
+from handwriting.path.curve.point import Point
 
 
 class PageTextWriterApp(tk.Frame,
                         GridManager,
                         EventManager,
                         ArrowButtonHandlers):
-
-    default_pages_directory = Path("pages")
+    default_pages_directory = Path("../pages")
 
     def __init__(self, root):
         tk.Frame.__init__(self, root)
@@ -57,7 +54,14 @@ class PageTextWriterApp(tk.Frame,
         def update_after_creation(app):
             app.update_current_page()
             exit(0)
+
         threading.Thread(target=update_after_creation, args=(self,)).start()
+
+    @staticmethod
+    def main():
+        root = tk.Tk()
+        app = PageTextWriterApp(root)
+        root.mainloop()
 
     def create_events_dict(self):
         return \
@@ -90,8 +94,8 @@ class PageTextWriterApp(tk.Frame,
 
         grid_width = 15
 
-        self.entry_dict_path = EntryWithLabel(root, "Dictionary:", grid_width * 2, 1/2)
-        self.entry_pages_dir = EntryWithLabel(root, "Pages folder:", grid_width * 2, 1/2)
+        self.entry_dict_path = EntryWithLabel(root, "Dictionary:", grid_width * 2, 1 / 2)
+        self.entry_pages_dir = EntryWithLabel(root, "Pages folder:", grid_width * 2, 1 / 2)
 
         self.menu_pages = MenuWithHandler(root, grid_width, self.handle_page_chosen)
         self.update_page_name()
@@ -112,13 +116,13 @@ class PageTextWriterApp(tk.Frame,
         btn_reset_text = tk.Button(root, text="Reset text", width=round(grid_width * 2 / 3),
                                    command=lambda: self.handle_reset_text())
 
-        self.entry_space_sz = EntryIntegerWithLabel(root, "Space size:", grid_width * 2, 1/2)
+        self.entry_space_sz = EntryIntegerWithLabel(root, "Space size:", grid_width * 2, 1 / 2)
         self.entry_space_sz.set(50)
 
         self.entry_draw_text = tk.Text(root, width=grid_width * 2 - 8, height=20)
 
         btn_open_dict = tk.Button(root, text="Open dict_manager", width=grid_width,
-                                  command=self.open_dictionary)
+                                  command=self.handle_update_dict_path)
 
         btn_open_pages = tk.Button(root, text="Open pages", width=grid_width,
                                    command=self.open_pages_directory)
@@ -128,7 +132,6 @@ class PageTextWriterApp(tk.Frame,
 
         btn_save_pages = tk.Button(root, text="Save pages", width=grid_width,
                                    command=self.save_pages_to_files)
-
 
         self.button_edit_anchors = ButtonWithTwoStates(
             root, grid_width,
@@ -152,12 +155,12 @@ class PageTextWriterApp(tk.Frame,
 
         # arrange table
         widgets_table_rows = [
-            [(self.entry_dict_path, {"columnspan": 2}), None,   btn_open_dict],
-            [(self.entry_pages_dir, {"columnspan": 2}), None,   btn_open_pages,         btn_pages_from_images],
-            [btn_rename_page,       self.menu_pages,            btn_remove_page,        self.button_edit_anchors],
-            [btn_save_pages,        buttons_page_controls,      btn_reset_text,         btn_draw_text],
-            [label_create_lines,    self.entry_lines_count,     self.btn_create_lines],
-            [(self.entry_space_sz, {"columnspan": 2}), None,    label_anchor_index],
+            [(self.entry_dict_path, {"columnspan": 2}), None, btn_open_dict],
+            [(self.entry_pages_dir, {"columnspan": 2}), None, btn_open_pages, btn_pages_from_images],
+            [btn_rename_page, self.menu_pages, btn_remove_page, self.button_edit_anchors],
+            [btn_save_pages, buttons_page_controls, btn_reset_text, btn_draw_text],
+            [label_create_lines, self.entry_lines_count, self.btn_create_lines],
+            [(self.entry_space_sz, {"columnspan": 2}), None, label_anchor_index],
             [(self.entry_draw_text, {"columnspan": 4})]
         ]
 
@@ -360,8 +363,8 @@ class PageTextWriterApp(tk.Frame,
         if self.pages_manager.check_started_anchor_editing():
             line_iter = self.pages_manager.anchor_manager.line_iterator
             if line_iter is not None:
-                line_i = line_iter.object_index
-                point_i = line_iter.current().object_index if line_iter.current() is not None else 0
+                line_i = line_iter.index
+                point_i = line_iter.current().index if line_iter.current() is not None else 0
         return line_i, point_i
 
     def update_current_page(self):
@@ -424,11 +427,6 @@ class PageTextWriterApp(tk.Frame,
                 self.update_pages_menu()
                 self.update_page_name()
 
-def main():
-    root = tk.Tk()
-    app = PageTextWriterApp(root)
-    root.mainloop()
-
 
 if __name__ == "__main__":
-    main()
+    PageTextWriterApp.main()

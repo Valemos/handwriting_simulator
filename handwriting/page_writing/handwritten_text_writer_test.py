@@ -1,23 +1,23 @@
 import unittest
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from handwriting.page_writing.handwritten_text_writer import HandwrittenTextWriter
 from handwriting.page_writing.page import Page
-from handwriting.path_management.curve import Curve
-from handwriting.path_management.handwritten_path import HandwrittenPath
-from handwriting.path_management.path_group import PathGroup
-from handwriting.path_management.point import Point
-from handwriting.path_management.signature_dictionary import SignatureDictionary
+from handwriting.path.curve.curve import Curve
+from handwriting.path.handwritten_path import HandwrittenPath
+from handwriting.path.path_group import PathGroup
+from handwriting.path.curve.point import Point
+from handwriting.path.signature_dictionary import SignatureDictionary
 
 
 class TestTextWriter(unittest.TestCase):
 
     @staticmethod
     def init_test_path_group(name):
-        curve = Curve([Point(0, 0), Point(-1, -1), Point(-1, 1), Point(0, -1)])
-        path = HandwrittenPath('', [curve])
+        curve = Curve([Point(0, 0), Point(2, 2), Point(1, -1), Point(1, 0)])
+        path = HandwrittenPath(curves=[curve])
         path_group = PathGroup(name, [path])
         return path_group
 
@@ -48,11 +48,34 @@ class TestTextWriter(unittest.TestCase):
                 self.fail("parent finished before child object")
             return
 
+    @unittest.skip("image show do not needed")
+    def test_show_image(self):
+        test_text = 'a b'
+
+        writer = HandwrittenTextWriter(self.page, self.dictionary)
+        text_path = writer.write_text(test_text)
+
+        image = Image.fromarray(np.full((20, 20), 255))
+        draw = ImageDraw.Draw(image)
+
+        it = text_path.get_iterator(Point(5, 5))
+        try:
+            while True:
+                p1, p2 = next(it)
+                draw.line((*p1, *p2), 0)
+        except StopIteration:
+            image.resize((100, 100)).show()
+
+    @staticmethod
+    def init_path_plus_5():
+        return HandwrittenPath(curves=[Curve([Point(1, 0), Point(1, 0), Point(1, 0), Point(1, 0), Point(1, 0)])])
+
     def setUp(self):
-        self.path_group_a = self.init_test_path_group('a')
-        self.path_group_b = self.init_test_path_group('b')
-        self.page = self.init_page()
-        self.dictionary = self.init_dictionary([self.path_group_a, self.path_group_b])
+        self.path_group_a: PathGroup = self.init_test_path_group('a')
+        self.path_group_b: PathGroup = self.init_test_path_group('b')
+        self.path_plus_5: HandwrittenPath = self.init_path_plus_5()
+        self.page: Page = self.init_page()
+        self.dictionary: SignatureDictionary = self.init_dictionary([self.path_group_a, self.path_group_b])
 
     def test_single_letter_written(self):
 
@@ -68,8 +91,32 @@ class TestTextWriter(unittest.TestCase):
 
         writer = HandwrittenTextWriter(self.page, self.dictionary)
         text_path = writer.write_text(test_text)
-
         text_path_iter = iter(text_path)
 
+        last_point = self.path_group_a[0].get_last_point()
+        b_iter = self.path_group_b[0].get_iterator(last_point)
+
         self.check_iterator_continues_with_other(text_path_iter, iter(self.path_group_a[0]))
-        self.check_iterator_continues_with_other(text_path_iter, iter(self.path_group_b[0]))
+        self.check_iterator_continues_with_other(text_path_iter, b_iter)
+
+    def test_space_written(self):
+        test_text = 'a a'
+
+        writer = HandwrittenTextWriter(self.page, self.dictionary)
+        writer.set_space_size(5)
+        text_path_iter = iter(writer.write_text(test_text))
+
+        self.path_group_a[0].set_position(Point(0, 0))
+        last_point = self.path_group_a[0].get_last_point()
+
+        self.check_iterator_continues_with_other(text_path_iter, iter(self.path_group_a[0]))
+
+        a_iter_shifted = self.path_group_a[0].get_iterator(last_point.shift(Point(5, 0)))
+        self.check_iterator_continues_with_other(text_path_iter, a_iter_shifted)
+
+    def test_save_and_load_dictionary(self):
+        self.dictionary.save_file()
+
+        d2 = SignatureDictionary.from_file(self.dictionary.get_save_path())
+
+        self.assertEquals(self.dictionary, d2)

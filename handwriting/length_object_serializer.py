@@ -2,8 +2,9 @@
 class LengthObjectSerializer:
 
     @staticmethod
-    def write_length_object(stream, object_bytes, lenght_bytes=2):
-        stream.write(len(object_bytes).to_bytes(lenght_bytes, "big"))
+    def write_length_object(stream, object_bytes, length_bytes=2):
+        # ! can cause errors when length bytes cannot hold size of an object_bytes
+        stream.write(len(object_bytes).to_bytes(length_bytes, "big"))
         stream.write(object_bytes)
 
     @staticmethod

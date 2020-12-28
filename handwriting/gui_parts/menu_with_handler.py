@@ -32,4 +32,4 @@ class MenuWithHandler(tk.OptionMenu):
                 command=lambda c=choice_object: self.choice_handler(c))
 
     def set(self, group_name):
-        self.variable_menu.set(group_name if group_name is not None else self.default_choice)
+        self.variable_menu.set(group_name if group_name is not None and group_name != "" else self.default_choice)

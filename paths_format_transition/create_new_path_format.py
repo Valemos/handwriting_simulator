@@ -1,10 +1,9 @@
 from pathlib import Path
 import pickle
-from handwriting.path_management.handwritten_path import HandwrittenPath
-from handwriting.path_management.curve import Curve
-from handwriting.path_management.path_group import PathGroup
-from handwriting.path_management.point import Point
-from handwriting.path_management.signature_dictionary import SignatureDictionary
+from handwriting.path.handwritten_path import HandwrittenPath
+from handwriting.path.path_group import PathGroup
+from handwriting.path.curve.point import Point
+from handwriting.path.signature_dictionary import SignatureDictionary
 
 input_files = list(Path("../letters/").glob("*.dat"))[:3]
 
@@ -21,30 +20,24 @@ for file in input_files:
 
         new_path_group = PathGroup(file.name[:file.name.index('.')])
         for letter, points in letters_dict.items():
-            curves = [Curve()]
-            last_curve_point = None
+            new_path = HandwrittenPath(letter)
+
+            previous_point = None
             for point in points:
                 if point != (65535, 65535):
                     # first point must be shifted relative to previous curve if this curve is not the first
-                    if last_curve_point is not None:
-                        # calculate relative shift from last absolute point
-                        curves[-1].last_absolute_point = last_curve_point
-                        # must be called after last_curve_point assignment to avoid incorrect calculations
-                        curves[-1].append_shift(Point(*point).get_shift(last_curve_point))
-                        last_curve_point = None
+                    if previous_point is not None:
+                        new_path.new_curve(Point(*point), previous_point)
+                        previous_point = None
                     else:
-                        curves[-1].append_absolute(Point(*point))
+                        new_path.append_absolute(Point(*point))
                 else:
-                    if len(curves) > 0:
+                    if len(new_path) > 0:
                         # create new curve and remember previous point
-                        last_curve_point = curves[-1].last_absolute_point
-                        curves.append(Curve())
+                        previous_point = Point(*point)
 
-            if len(curves[-1].components) == 0:
-                curves.pop(len(curves) - 1)
-
-            if sum((len(cr) for cr in curves)) > 10:
-                new_path_group.append_path(HandwrittenPath(letter, curves))
+            if sum((len(cr) for cr in new_path.components)) > 10:
+                new_path_group.append_path(new_path)
         new_dictionary.append_group(new_path_group)
 
 new_dictionary.save_file()

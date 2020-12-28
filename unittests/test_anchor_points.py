@@ -3,8 +3,8 @@ import threading
 import time
 import tkinter as tk
 
-from handwriting.page_writing.page_text_writer_app import PageTextWriterApp
-from handwriting.path_management.point import Point
+from page_text_writer_app import PageTextWriterApp
+from handwriting.path.curve.point import Point
 
 
 class TestAnchorPoints(unittest.TestCase):

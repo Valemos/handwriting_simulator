@@ -20,7 +20,7 @@ class Point:
         return (i for i in (self.x, self.y))
 
     def get_shift(self, prev):
-        """Returns Point which was added to previous point to get this one"""
+        """Returns shift from previous point to current"""
         return Point(self.x - prev.x, self.y - prev.y)
 
     def shift(self, amount):

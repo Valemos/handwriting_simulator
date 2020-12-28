@@ -1,7 +1,7 @@
 
 def step_backwards(num, mx):
     """
-    This function implements stepping in backward direction by 1 for some integer
+    Step in backward direction by 1 for some integer
     :param num: int number to step with
     :param mx: maximum value number can get to
     :return: number stepped back by 1
@@ -11,7 +11,7 @@ def step_backwards(num, mx):
 
 def step_forwards(num, mx):
     """
-    This function implements stepping in forward direction by 1 for some integer
+    Step in forward direction by 1 for some integer
     :param num: int number to step with
     :param mx: next integer value after maximum number
     :return: number stepped forward by 1

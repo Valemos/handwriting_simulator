@@ -2,9 +2,8 @@ import pickle
 from pathlib import Path
 
 from PIL import Image
-from PIL.ImageTk import PhotoImage
-
 from handwriting.length_object_serializer import LengthObjectSerializer
+from handwriting.page_writing.page_transform_grid import PageTransformGrid
 
 
 class Page(LengthObjectSerializer):
@@ -24,7 +23,7 @@ class Page(LengthObjectSerializer):
         self.image_text = None
         self.name = name if name is not None else ''
 
-        self.lines_points = [[]]
+        self.page_transform = PageTransformGrid([[]])
 
     @classmethod
     def from_image(cls, path):
@@ -47,8 +46,8 @@ class Page(LengthObjectSerializer):
         if self.save_path is not None:
             self.save_path = self.save_path.with_name(name).with_suffix(Page.pages_data_suffix)
         else:
-            self.save_path = self.get_save_path(Path(name))
-        self.name = name
+            self.name = name
+        pass
 
     def save_file(self):
         if self.save_path is not None:
@@ -61,8 +60,8 @@ class Page(LengthObjectSerializer):
                     page_name_bytes = str(self.name).encode("utf-8")
                     self.write_length_object(fout, page_name_bytes)
 
-                    anchor_points_bytes = pickle.dumps(self.lines_points)
-                    self.write_length_object(fout, anchor_points_bytes, 3)
+                    grid_bytes = pickle.dumps(self.page_transform)
+                    self.write_length_object(fout, grid_bytes, 4)
 
                     pickle.dump(self.image_initial, fout)
 
@@ -75,7 +74,7 @@ class Page(LengthObjectSerializer):
             with file_path.open("rb") as fin:
                 try:
                     page_name = LengthObjectSerializer.read_length_object(fin).decode("utf-8")
-                    anchor_points = LengthObjectSerializer.read_length_object(fin, 3)
+                    anchor_points = LengthObjectSerializer.read_length_object(fin, 4)
                     anchor_points = pickle.loads(anchor_points)
                     image = pickle.load(fin)
                     new_obj = Page(image, page_name, file_path)
@@ -85,7 +84,7 @@ class Page(LengthObjectSerializer):
                     print(f"cannot load page from file {str(file_path)}")
 
     def add_line_anchor_point(self, line_index, point):
-        self.lines_points[line_index].append(point)
+        self.page_transform.add_anchor(point, line_index)
 
     @classmethod
     def read_pages(cls, directory_path):

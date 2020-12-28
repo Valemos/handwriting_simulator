@@ -1,8 +1,8 @@
 from pathlib import Path
 from tkinter import messagebox, filedialog
 
-from handwriting.path_management.signature_dictionary import SignatureDictionary
-from handwriting.path_management.signature_dictionary_iterator import SignatureDictionaryIterator
+from handwriting.path.signature_dictionary import SignatureDictionary
+from handwriting.path.signature_dictionary_iterator import SignatureDictionaryIterator
 
 
 class DictionaryManager:
@@ -46,6 +46,9 @@ class DictionaryManager:
         self.iterator = self.dictionary.get_iterator() if self.dictionary is not None else None
 
         return dict_file
+
+    def create_default(self):
+        return self.read_from_file(SignatureDictionary.default_path)
 
     def save_file(self, file_name):
         save_path = self.get_dictionary_file_path(file_name)

@@ -25,8 +25,7 @@ class ExtendingIterator:
 
     def next(self):
         if len(self) == 0:
-            self.object_list.append(None)
-            self.object_index = 0
+            self.create_first_empty()
         elif self.object_index == len(self.object_list) - 1:
             if self.object_list[-1] is not None:
                 self.object_list.append(None)
@@ -36,17 +35,22 @@ class ExtendingIterator:
         else:
             self.object_index = 0
 
+    def create_first_empty(self):
+        self.object_list.append(None)
+        self.object_index = 0
+
     def prev(self):
-        if len(self) == 0:
-            self.object_list.append(None)
-            self.object_index = 0
-        elif self.object_index == 0:
-            if self.object_list[0] is not None:
-                self.object_list.insert(0, None)
-        elif self.object_index in self:
+        if self.object_index in self:
             self.object_index -= 1
         else:
             self.object_index = 0
+            self.insert_empty(self.object_index)
+
+    def insert_empty(self, index):
+        if self.object_list[index] is not None:
+            self.object_list.insert(index, None)
+            return True
+        return False
 
     def set_current(self, new_object):
         if self.object_index in self:
