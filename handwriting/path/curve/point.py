@@ -19,12 +19,30 @@ class Point:
     def __iter__(self):
         return (i for i in (self.x, self.y))
 
+    def __sub__(self, other):
+        return Point(self.x - other.x, self.y - other.y)
+
+    def __lt__(self, other: float):
+        """coordinate-wise comparison"""
+        return (self.x < other) or (self.y < other)
+
+    def __gt__(self, other: float):
+        """coordinate-wise comparison"""
+        return (self.x > other) or (self.y > other)
+
     def get_shift(self, prev):
         """Returns shift from previous point to current"""
         return Point(self.x - prev.x, self.y - prev.y)
 
     def shift(self, amount):
         return Point(self.x + amount.x, self.y + amount.y)
+
+    def in_range(self, mn, mx):
+        return not (self < mn or self > mx)
+
+    def shift_inplace(self, amount):
+        self.x += amount.x
+        self.y += amount.y
 
     @staticmethod
     def from_byte(data, byte_len=2):

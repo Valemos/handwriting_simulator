@@ -67,6 +67,7 @@ class PageTextWriterApp(tk.Frame,
 
     def initialize(self):
         self.open_dictionary(r"D:\coding\Python_codes\Handwriting_extractor_project\paths_format_transition\anton.dict")
+        self.entry_draw_text.insert(tk.END, "тестовая")
 
     def create_events_dict(self):
         return \

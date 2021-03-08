@@ -34,7 +34,7 @@ class Page(LengthObjectSerializer):
     @classmethod
     def empty(cls, page_size=None):
         page_size = page_size if page_size is not None else cls.default_size
-        return Page(Image.new("RGB", page_size, (255, 255, 255)))
+        return Page(Image.new("RGB", page_size, (255, 255, 255)), "empty page")
 
     @classmethod
     def from_image(cls, path):
