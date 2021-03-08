@@ -37,7 +37,7 @@ class AnchorManager:
         self.redraw_all_points()
 
     def redraw_all_points(self):
-        for row in self.line_iterator.object_list:
+        for row in self.line_iterator.objects:
             for point in row:
                 if point is not None:
                     self.redraw_point(point)
@@ -89,6 +89,15 @@ class AnchorManager:
         cur = self.line_iterator.current().current()
         if cur is not None:
             self.redraw_point(cur)
+
+    def get_current_indices(self):
+        line_i, point_i = None, None
+        line_iter = self.line_iterator
+        if line_iter is not None:
+            line_i = line_iter.index
+            point_i = line_iter.current().index if line_iter.current() is not None else 0
+
+        return line_i, point_i
 
     def move_up(self):
         if self.line_iterator is not None:
@@ -188,13 +197,13 @@ class AnchorManager:
 
     def insert_empty_lines(self, start_index, line_count):
         for i in range(start_index + 1, start_index + line_count):
-            self.line_iterator.object_list.insert(i, ExtendingIterator([]))
+            self.line_iterator.objects.insert(i, ExtendingIterator([]))
 
     @staticmethod
     def remove_empty_points(iterator: ExtendingIterator):
         i = 0
         while i < len(iterator):
             if iterator[i] is None:
-                iterator.object_list.pop(i)
+                iterator.objects.pop(i)
             else:
                 i += 1

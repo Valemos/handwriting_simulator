@@ -1,8 +1,8 @@
-from handwriting.page_writing.page import Page
-from handwriting.path.curve.spacer import Spacer
+from handwriting.path.curve.curve import Curve
 from handwriting.path.handwritten_path import HandwrittenPath
-from handwriting.path.curve.point import Point
 from handwriting.path.signature_dictionary import SignatureDictionary
+from handwriting.page_writing.page import Page
+from handwriting.path.curve.point import Point
 
 
 class HandwrittenTextWriter:
@@ -18,7 +18,7 @@ class HandwrittenTextWriter:
 
         for char in test_text:
             if char == ' ':
-                char_path = HandwrittenPath(curves=[Spacer(space_shift)])
+                char_path = HandwrittenPath(curves=[Curve(start_shift=space_shift)])
             else:
                 char_path = self.dictionary[char][0]
 

@@ -6,7 +6,7 @@ class EmptyCyclicIterator(CyclicIterator):
     def __init__(self):
         super().__init__(None)
 
-    def get_max(self):
+    def __len__(self):
         return 0
 
     def next(self):

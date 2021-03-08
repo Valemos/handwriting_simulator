@@ -1,4 +1,5 @@
 import pickle
+from math import sqrt
 from pathlib import Path
 
 from PIL import Image
@@ -15,15 +16,25 @@ class Page(LengthObjectSerializer):
     default_file = Path("page_data")
     pages_data_suffix = ".page"
 
+    # size as for A4 format scaled by 2
+    default_size = (210 * 2, round(210 * 2 * sqrt(2)))
+
     def __init__(self, image: Image, name=None, path=None):
         self.save_path = self.get_save_path(path)
         self.save_dir = None
-        self.current_image = image
-        self.image_initial = image
-        self.image_text = None
         self.name = name if name is not None else ''
 
+        # indicates to create new image on next request for image to draw
+        self._reset_image = True
+        self._image_initial = image
+        self._image_text = None
+
         self.page_transform = PageTransformGrid([[]])
+
+    @classmethod
+    def empty(cls, page_size=None):
+        page_size = page_size if page_size is not None else cls.default_size
+        return Page(Image.new("RGB", page_size, (255, 255, 255)))
 
     @classmethod
     def from_image(cls, path):
@@ -63,7 +74,7 @@ class Page(LengthObjectSerializer):
                     grid_bytes = pickle.dumps(self.page_transform)
                     self.write_length_object(fout, grid_bytes, 4)
 
-                    pickle.dump(self.image_initial, fout)
+                    pickle.dump(self._image_initial, fout)
 
                 except pickle.PicklingError:
                     print(f"cannot save page to file {str(self.save_path)}")
@@ -95,11 +106,17 @@ class Page(LengthObjectSerializer):
         return pages
 
     def set_current_image_initial(self):
-        self.current_image = self.image_initial
+        self.current_image = self._image_initial
 
     def set_current_image_text(self):
-        self.current_image = self.image_text
+        self.current_image = self._image_text
 
-    def get_new_text_image(self):
-        self.current_image = self.image_initial.copy()
-        return self.current_image
+    def reset_page(self):
+        self._reset_image = True
+
+    def get_draw_image(self):
+        if self._reset_image:
+            self._image_text = self._image_initial.copy()
+            self._reset_image = False
+
+        return self._image_text

@@ -10,8 +10,8 @@ class Curve(ICurveIterable):
     with each point stored as last_point relative to previous point
     """
 
-    def __init__(self, shifts: list = None, start_spacer: Point = None):
-        self.start_spacer = start_spacer if start_spacer is not None else Point(0, 0)
+    def __init__(self, shifts: list = None, start_shift: Point = None):
+        self.start_shift = start_shift if start_shift is not None else Point(0, 0)
         self.components = shifts if shifts is not None else []
         self.last_absolute_point = self.get_last_point()
 
@@ -57,7 +57,7 @@ class Curve(ICurveIterable):
         return point
 
     def get_start_shift(self, shift: Point = None):
-        return self.start_spacer.shift(shift) if shift is not None else self.start_spacer
+        return self.start_shift.shift(shift) if shift is not None else self.start_shift
 
     @classmethod
     def create(cls, saved_content):

@@ -4,6 +4,7 @@ from handwriting.page_writing.anchor_manager import AnchorManager
 from handwriting.cyclic_iterator import CyclicIterator
 from handwriting.page_writing.page import Page
 
+
 class PageManager:
     """
     class allows to store pages and iterate through them
@@ -85,5 +86,14 @@ class PageManager:
         self.pages_iterator = CyclicIterator(self.pages)
         self.pages_iterator.select(prev_i)
 
-    def current_page_exists(self):
+    def page_exists(self):
         return self.current_page() is not None
+
+    def create_empty_page(self):
+        self.pages_iterator.append(Page.empty())
+        return self.pages_iterator.current()
+
+    def get_anchor_indices(self):
+        if self.check_started_anchor_editing():
+            return self.anchor_manager.get_current_indices()
+        return None, None

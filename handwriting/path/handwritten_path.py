@@ -22,7 +22,7 @@ class HandwrittenPath(IStreamSavableCollection):
 
     def set_position(self, point: Point):
         if len(self.components) > 1:
-            self.components[0].start_spacer = point
+            self.components[0].start_shift = point
             self.calc_last_point()
 
     def get_position(self):
@@ -35,7 +35,7 @@ class HandwrittenPath(IStreamSavableCollection):
         previous_point = previous_point if previous_point is not None else Point(0, 0)
         relative_curve_shift = start_point.get_shift(previous_point)
 
-        curve = Curve(start_spacer=relative_curve_shift)
+        curve = Curve(start_shift=relative_curve_shift)
         curve.last_absolute_point = start_point
 
         self.components.append(curve)

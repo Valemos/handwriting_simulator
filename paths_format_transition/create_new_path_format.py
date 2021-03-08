@@ -5,9 +5,9 @@ from handwriting.path.path_group import PathGroup
 from handwriting.path.curve.point import Point
 from handwriting.path.signature_dictionary import SignatureDictionary
 
-input_files = list(Path("../letters/").glob("*.dat"))[:3]
+input_files = list(Path("../letters/").glob("*.dat"))
 
-output_folder = Path("../my_letters")
+output_folder = Path("../letters_updated")
 
 # test_file = Path('test_dictionary.dat')
 # test_file.open('w+').close()

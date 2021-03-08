@@ -31,16 +31,15 @@ class HandwritingShiftModifier(tk.Frame, GridManager, EventManager):
     def __init__(self, root):
         root.geometry("510x650")
         tk.Frame.__init__(self, root)
-        self.root = root
+        self.parent = root
 
-        self.brush_size = 5
-        self.brush_color = "black"
+        self._brush_size = 5
+        self._brush_color = "black"
+        self._mouse_released = True
 
         # dict_manager of path groups with default value
         self.dict_manager = DictionaryManager()
         self.cur_path_iterator: PathLinesIterator = None
-
-        self._mouse_released = True
 
         self.background_image = None
         self.setup_ui()
@@ -62,8 +61,8 @@ class HandwritingShiftModifier(tk.Frame, GridManager, EventManager):
                     "Motion": (self.canvas, self.handle_motion_draw)
                 },
                 "KeyPress": {
-                    "Left": (self.root, self.handle_prev_letter),
-                    "Right": (self.root, self.handle_next_letter),
+                    "Left": (self.parent, self.handle_prev_letter),
+                    "Right": (self.parent, self.handle_next_letter),
                     "Return": [
                         (self.entry_shift_x.entry, self.handle_draw_path),
                         (self.entry_shift_y.entry, self.handle_draw_path),
@@ -71,8 +70,8 @@ class HandwritingShiftModifier(tk.Frame, GridManager, EventManager):
                         (self.entry_new_group, self.handle_create_new_path),
                         (self.entry_new_variant, self.handle_create_new_path)
                     ],
-                    "Delete": (self.root, self.handle_delete_path),
-                    "space": (self.root, self.handle_create_new_path)
+                    "Delete": (self.parent, self.handle_delete_path),
+                    "space": (self.parent, self.handle_create_new_path)
                 }
             }
 
@@ -145,7 +144,7 @@ class HandwritingShiftModifier(tk.Frame, GridManager, EventManager):
 
     def setup_ui(self):
 
-        self.root.title("Handwriting manager")
+        self.parent.title("Handwriting manager")
         self.pack(fill=tk.BOTH, expand=1)
 
         self.put_objects_on_grid(*self.create_ui_grid(self))
@@ -193,7 +192,7 @@ class HandwritingShiftModifier(tk.Frame, GridManager, EventManager):
 
     # draw path
     def draw_line(self, point1: Point, point2: Point):
-        self.canvas.create_line(point1.x, point1.y, point2.x, point2.y, fill=self.brush_color, width=self.brush_size)
+        self.canvas.create_line(point1.x, point1.y, point2.x, point2.y, fill=self._brush_color, width=self._brush_size)
 
     def draw_iterator_lines(self, path_iterator):
         while True:
@@ -247,11 +246,11 @@ class HandwritingShiftModifier(tk.Frame, GridManager, EventManager):
             return
 
         self.update_menu_names()
-        self.root.focus()
+        self.parent.focus()
 
     def handle_draw_path(self, event):
         self.update_current_path()
-        self.root.focus()
+        self.parent.focus()
 
     def handle_clear_path(self, event=None):
         if self.dict_manager.exists():
@@ -336,7 +335,7 @@ class HandwritingShiftModifier(tk.Frame, GridManager, EventManager):
         new_path = self.dict_manager.read_from_file(self.entry_dict_path.get())
         self.entry_dict_path.set(str(new_path))
 
-        self.root.focus()
+        self.parent.focus()
         self.update_menu_groups()
         self.update_selected_group()
 

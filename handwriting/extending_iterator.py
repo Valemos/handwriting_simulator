@@ -1,77 +1,48 @@
+from handwriting.container_iterator import AContainerIterator
 
-class ExtendingIterator:
+
+class ExtendingIterator(AContainerIterator):
     """
     This class iterates through list and allows to add new items by iterating it's variant_index outside of bounds
     """
 
-    def __init__(self, object_list: list):
-        self.object_list = object_list
-        self.object_index = 0
-
-    def __contains__(self, i):
-        return 0 <= i < len(self.object_list)
-
-    def __getitem__(self, i):
-        return self.object_list[i]
-
-    def __setitem__(self, i, val):
-        self.object_list[i] = val
-
-    def __len__(self):
-        return len(self.object_list)
-
-    def append(self, item):
-        self.object_list.append(item)
+    def __init__(self, objects: list):
+        super().__init__(objects)
 
     def next(self):
-        if len(self) == 0:
-            self.create_first_empty()
-        elif self.object_index == len(self.object_list) - 1:
-            if self.object_list[-1] is not None:
-                self.object_list.append(None)
-                self.object_index += 1
-        elif self.object_index in self:
-            self.object_index += 1
+        if self.index == len(self.objects) - 1:
+            if self.objects[-1] is not None:
+                self.objects.append(None)
+                self.index += 1
+        elif self.index in self:
+            self.index += 1
         else:
-            self.object_index = 0
-
-    def create_first_empty(self):
-        self.object_list.append(None)
-        self.object_index = 0
+            self.index = 0
 
     def prev(self):
-        if self.object_index in self:
-            self.object_index -= 1
+        if self.index in self:
+            self.index -= 1
         else:
-            self.object_index = 0
-            self.insert_empty(self.object_index)
+            self.index = 0
+            self.insert_empty(self.index)
 
     def insert_empty(self, index):
-        if self.object_list[index] is not None:
-            self.object_list.insert(index, None)
+        if self.objects[index] is not None:
+            self.objects.insert(index, None)
             return True
         return False
 
     def set_current(self, new_object):
-        if self.object_index in self:
-            self.object_list[self.object_index] = new_object
+        if self.index in self:
+            self.objects[self.index] = new_object
         else:
-            self.object_list.append(new_object)
-            self.object_index = len(self.object_list) - 1
-
-    def select(self, index):
-        if index in self:
-            self.object_index = index
-
-    def current(self):
-        if self.object_index in self:
-            return self.object_list[self.object_index]
-        return None
+            self.objects.append(new_object)
+            self.index = len(self.objects) - 1
 
     def delete_current(self):
-        if self.object_index in self:
-            self.object_list.pop(self.object_index)
-            self.object_index = self.object_index - 1 if self.object_index > 0 else 0
+        if self.index in self:
+            self.objects.pop(self.index)
+            self.index = self.index - 1 if self.index > 0 else 0
 
     def check_cell_empty(self):
         """
@@ -81,6 +52,6 @@ class ExtendingIterator:
         :return: True if current object is None, or object list is empty, False otherwise
         """
 
-        if self.object_index in self:
-            return self.object_list[self.object_index] is None
+        if self.index in self:
+            return self.objects[self.index] is None
         return True
