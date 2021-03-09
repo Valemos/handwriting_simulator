@@ -14,6 +14,18 @@ output_folder = Path("../letters_updated")
 
 new_dictionary = SignatureDictionary("anton")
 
+
+def remove_empty_curves(path):
+    i = 0
+    while i < len(path.components):
+        if len(path.components[i]) == 0:
+            path.components.pop(i)
+        else:
+            i += 1
+
+
+gap_point = Point(65535, 65535)
+
 for file in input_files:
     with file.open('rb') as fin:
         letters_dict = pickle.load(fin)
@@ -22,22 +34,34 @@ for file in input_files:
         for letter, points in letters_dict.items():
             new_path = HandwrittenPath(letter)
 
-            previous_point = None
-            for point in points:
-                if point != (65535, 65535):
-                    # first point must be shifted relative to previous curve if this curve is not the first
-                    if previous_point is not None:
-                        new_path.new_curve(Point(*point), previous_point)
-                        previous_point = None
-                    else:
-                        new_path.append_absolute(Point(*point))
-                else:
-                    if len(new_path) > 0:
-                        # create new curve and remember previous point
-                        previous_point = Point(*point)
+            point = Point(0, 0)
+            prev_point = Point(0, 0)
+            is_first_point = True
+            i = 0
+            while i < len(points):
+                prev_point = point
+                point = Point(*points[i])
+                i += 1
 
-            if sum((len(cr) for cr in new_path.components)) > 10:
+                if point == gap_point:
+                    is_first_point = True
+                    # take next point
+                    if i < len(points):
+                        point = Point(*points[i])
+                        i += 1
+                    else:
+                        break
+
+                if is_first_point:
+                    new_path.new_curve(point, prev_point)
+                    is_first_point = False
+                else:
+                    new_path.append_absolute(point)
+
+            if new_path.inner_elements_count() > 10:
+                remove_empty_curves(new_path)
                 new_path_group.append_path(new_path)
+
         new_dictionary.append_group(new_path_group)
 
 new_dictionary.save_file()

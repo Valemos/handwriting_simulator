@@ -26,7 +26,7 @@ class PathLinesIterator(Iterator):
         self.points = self.lines_iterator.next()
 
         if self.lines_iterator.is_finished():
-            self.lines_iterator.finished = False  # to enable drawing when new points added
+            self.lines_iterator.finished = False  # enables iterating when new points are added
             self.iterate_next_curve(self.points[1])
             self.__next__()
 

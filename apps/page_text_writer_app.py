@@ -49,25 +49,20 @@ class PageTextWriterApp(tk.Frame,
         self.arrow_handlers: ButtonHandlerGroup = None
         self.select_page_switch_handlers()
 
-        # self.open_pages_directory(r"D:\coding\Python_codes\Handwriting_extractor_project\pages")
-
-        def update_after_creation(app):
-            app.update_current_page()
-            exit(0)
-
-        threading.Thread(target=update_after_creation, args=(self,)).start()
-
     @staticmethod
     def main():
         root = tk.Tk()
         app = PageTextWriterApp(root)
         app.wait_visibility()
         app.initialize()
+        app.handle_draw_text()
         root.mainloop()
 
     def initialize(self):
-        self.open_dictionary(r"D:\coding\Python_codes\Handwriting_extractor_project\paths_format_transition\anton.dict")
         self.entry_draw_text.insert(tk.END, "тестовая")
+        self.open_dictionary(r"D:\coding\Python_codes\Handwriting_extractor_project\paths_format_transition\anton.dict")
+        # self.open_pages_directory(r"D:\coding\Python_codes\Handwriting_extractor_project\pages")
+        self.handle_draw_text()
 
     def create_events_dict(self):
         return \
@@ -409,9 +404,10 @@ class PageTextWriterApp(tk.Frame,
 
         text_drawer = HandwrittenTextWriter(page, self.dictionary_manager.dictionary)
 
+        page.reset_page()
         draw = ImageDraw.Draw(page.get_draw_image())
         for p1, p2 in text_drawer.write_text(text):
-            draw.line((*p1, *p2), fill=0, width=4)
+            draw.line((*p1, *p2), fill=0, width=3)
 
     def update_pages(self, file_path):
         self.pages_manager.pages = []

@@ -15,7 +15,7 @@ class TestPathLinesIterator(TestCase):
         self.path.new_curve(Point(10, 20))
         self.path.append_shift(Point(1, 2))
         self.path.append_shift(Point(1, 2))
-        self.path.calc_last_point()
+        self.path.get_last_point()
 
         self.path_iter = self.path.get_iterator()
 

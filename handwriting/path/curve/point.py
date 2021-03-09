@@ -1,8 +1,5 @@
 class Point:
 
-    byte_len = 2
-    coord_shift = 2 ** (byte_len * 8 - 1)
-
     def __init__(self, x=None, y=None):
         self.x = x
         self.y = y
@@ -43,6 +40,9 @@ class Point:
     def shift_inplace(self, amount):
         self.x += amount.x
         self.y += amount.y
+
+    def copy(self):
+        return Point(self.x, self.y)
 
     @staticmethod
     def from_byte(data, byte_len=2):

@@ -1,10 +1,11 @@
 from handwriting.path.curve.curve_iterator import CurveIterator
-from handwriting.path.curve.interface_iterable_curve import ICurveIterable
+from handwriting.path.curve.interface_iterable_curve import ILineIterable
 from handwriting.path.curve.lines_iterator import LinesIterator
 from handwriting.path.curve.point import Point
+from handwriting.path.positionable import IPositionable
 
 
-class Curve(ICurveIterable):
+class Curve(ILineIterable, IPositionable):
     """
     Contains set of shifts for handwritten path
     with each point stored as last_point relative to previous point
@@ -29,6 +30,12 @@ class Curve(ICurveIterable):
 
     def get_lines(self, shift=None):
         return LinesIterator(self, shift)
+
+    def set_position(self, point):
+        self.start_shift = point
+
+    def get_position(self):
+        return self.start_shift
 
     def append_shift(self, point: Point):
         self.components.append(point)

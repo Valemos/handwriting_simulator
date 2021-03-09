@@ -32,15 +32,15 @@ class PageTransformGrid(LengthObjectSerializer):
         return vector / norm(vector)
 
     def get_square_vectors(self, row, col):
-        pointLT = np.array([*self.anchor_points[row][col]])
-        pointRT = np.array([*self.anchor_points[row][col + 1]])
-        pointLB = np.array([*self.anchor_points[row + 1][col]])
-        pointRB = np.array([*self.anchor_points[row + 1][col + 1]])
+        point_lt = np.array([*self.anchor_points[row][col]])
+        point_rt = np.array([*self.anchor_points[row][col + 1]])
+        point_lb = np.array([*self.anchor_points[row + 1][col]])
+        point_rb = np.array([*self.anchor_points[row + 1][col + 1]])
 
-        vec_left = pointLT - pointLB
-        vec_right = pointRT - pointRB
-        vec_top = pointRT - pointLT
-        vec_bottom = pointRB - pointLB
+        vec_left = point_lt - point_lb
+        vec_right = point_rt - point_rb
+        vec_top = point_rt - point_lt
+        vec_bottom = point_rb - point_lb
 
         return self.normalize(vec_left), self.normalize(vec_right), self.normalize(vec_top), self.normalize(vec_bottom)
 

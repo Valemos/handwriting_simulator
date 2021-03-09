@@ -25,7 +25,6 @@ class Page(LengthObjectSerializer):
         self.name = name if name is not None else ''
 
         # indicates to create new image on next request for image to draw
-        self._reset_image = True
         self._image_initial = image
         self._image_text = None
 
@@ -112,11 +111,10 @@ class Page(LengthObjectSerializer):
         self.current_image = self._image_text
 
     def reset_page(self):
-        self._reset_image = True
+        self._image_text = self._image_initial.copy()
 
     def get_draw_image(self):
-        if self._reset_image:
-            self._image_text = self._image_initial.copy()
-            self._reset_image = False
+        if self._image_text is None:
+            self.reset_page()
 
         return self._image_text

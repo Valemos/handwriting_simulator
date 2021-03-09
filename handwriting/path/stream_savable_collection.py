@@ -19,3 +19,12 @@ class IStreamSavableCollection(IStreamSavable, ABC):
             return self.components == o.components
         return False
 
+    def inner_elements_count(self):
+        total = 0
+        for component in self.components:
+            if isinstance(component, IStreamSavableCollection):
+                total += component.inner_elements_count()
+            else:
+                total += len(component)
+
+        return total

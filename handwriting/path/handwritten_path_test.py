@@ -27,18 +27,18 @@ class TestHandwrittenPath(unittest.TestCase):
         self.abs_points = self.init_absolute_points()
 
     def test_create_empty_path(self):
-        self.assertEqual(self.empty_path.calc_last_point(), Point(0, 0))
+        self.assertEqual(self.empty_path.get_last_point(), Point(0, 0))
         self.assertTrue(self.empty_path.empty())
 
     def test_set_path_position(self):
         self.path.set_position(Point(10, 10))
-        self.assertEqual(self.path.calc_last_point(), Point(24, 24))
+        self.assertEqual(self.path.get_last_point(), Point(24, 24))
 
     def test_append_shift_to_path(self):
         self.empty_path.append_shift(Point(1, 1))
-        self.assertEqual(self.empty_path.calc_last_point(), Point(1, 1))
+        self.assertEqual(self.empty_path.get_last_point(), Point(1, 1))
         self.empty_path.append_shift(Point(10, 10))
-        self.assertEqual(self.empty_path.calc_last_point(), Point(11, 11))
+        self.assertEqual(self.empty_path.get_last_point(), Point(11, 11))
 
     def test_curve_last_point(self):
         self.assertEqual(self.curve.get_last_point(), Point(3, 3))

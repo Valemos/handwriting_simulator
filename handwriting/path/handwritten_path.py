@@ -1,10 +1,14 @@
+from typing import Iterator
+
 from handwriting.path.curve.curve import Curve
+from handwriting.path.curve.interface_iterable_curve import ILineIterable
 from handwriting.path.curve.point import Point
+from handwriting.path.positionable import IPositionable
 from handwriting.path.path_lines_iterator import PathLinesIterator
 from handwriting.path.stream_savable_collection import IStreamSavableCollection
 
 
-class HandwrittenPath(IStreamSavableCollection):
+class HandwrittenPath(IStreamSavableCollection, ILineIterable, IPositionable):
     """
     Contains name for path and list of components (canvas_objects of type Curve),
     which represent separate sets of shifts
@@ -17,26 +21,29 @@ class HandwrittenPath(IStreamSavableCollection):
     def __iter__(self):
         return PathLinesIterator(self)
 
-    def get_iterator(self, shift: Point = None) -> PathLinesIterator:
+    def get_iterator(self, shift: Point = None) -> Iterator:
+        return self.get_lines(shift)
+
+    def get_lines(self, shift: Point = None) -> PathLinesIterator:
         return PathLinesIterator(self, shift)
 
     def set_position(self, point: Point):
-        if len(self.components) > 1:
-            self.components[0].start_shift = point
-            self.calc_last_point()
+        if len(self.components) > 0:
+            self.components[0].set_position(point)
+            self.get_last_point()
 
     def get_position(self):
         if len(self.components) > 0:
-            return self.components[0].previous_point
+            return self.components[0].prev_point
         else:
             return Point(0, 0)
 
-    def new_curve(self, start_point: Point, previous_point: Point = None):
-        previous_point = previous_point if previous_point is not None else Point(0, 0)
-        relative_curve_shift = start_point.get_shift(previous_point)
+    def new_curve(self, start: Point, previous: Point = None):
+        previous = previous if previous is not None else Point(0, 0)
+        curve_shift = start.get_shift(previous)
 
-        curve = Curve(start_shift=relative_curve_shift)
-        curve.last_absolute_point = start_point
+        curve = Curve(start_shift=curve_shift)
+        curve.last_absolute_point = start  # must be assigned to continue adding points to curve
 
         self.components.append(curve)
 
@@ -58,8 +65,11 @@ class HandwrittenPath(IStreamSavableCollection):
     def append_path(self, other_path):
         self.components.extend(other_path.components)
 
-    def calc_last_point(self):
+    def get_last_point(self):
         last_point = Point(0, 0)
         for curve in self.components:
             last_point = curve.get_last_point(last_point)
         return last_point
+
+    def append(self, path: ILineIterable):
+        self.components.append(path)
