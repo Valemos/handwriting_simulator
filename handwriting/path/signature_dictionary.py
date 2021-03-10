@@ -124,6 +124,7 @@ class SignatureDictionary:
     @staticmethod
     def from_file(file_path):
         """Returns instance of SignatureDictionary from file"""
+
         try:
             with file_path.open('rb') as fin:
                 new_dictionary = SignatureDictionary(file_path.name[:file_path.name.index('.')])
@@ -175,3 +176,8 @@ class SignatureDictionary:
                 max_size[1] = max(box_height, max_size[1])
 
         return max_size
+
+    def get_all_paths(self):
+        for group in self.groups:
+            for letter in group:
+                yield letter

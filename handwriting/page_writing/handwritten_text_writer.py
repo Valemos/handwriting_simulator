@@ -1,3 +1,4 @@
+from handwriting.path.transform.dictionary_transformer import DictionaryTransformer
 from handwriting.path.path_collection import PathDrawableCollection
 from handwriting.path.curve.curve import Curve
 from handwriting.path.handwritten_path import HandwrittenPath
@@ -12,6 +13,7 @@ class HandwrittenTextWriter:
     def __init__(self, page, dictionary, space_size=0):
         self.page: Page = page
         self.dictionary: SignatureDictionary = dictionary
+        self.dict_transformer = DictionaryTransformer(dictionary)
 
         self.space_shift: Point = self.get_space_shift(space_size)
 
@@ -19,9 +21,9 @@ class HandwrittenTextWriter:
         text_path = PathDrawableCollection()
         borders_path = PathDrawableCollection()
 
-        # TODO transform dictionary and than construct text to allow letter boxes fit letters
+        self.dict_transformer.scale(0.5, 0.5)
 
-        letter_size: list = self.dictionary.get_max_letter_size()
+        letter_size: list = self.dict_transformer.get_result().get_max_letter_size()
 
         for letter_index, char in enumerate(text_input):
             char_variants = self.dictionary[char]
@@ -39,7 +41,6 @@ class HandwrittenTextWriter:
 
         # test path transform
         path_collection = PathCollectionTransformer(text_path)
-        path_collection.scale(0.5, 0.5)
         return path_collection.get_result()
 
     def get_special_character_path(self, char):

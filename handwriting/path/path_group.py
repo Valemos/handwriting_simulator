@@ -21,6 +21,9 @@ class PathGroup(IStreamSavableCollection):
     def __str__(self):
         return f"{self.name}: {len(self.components)}"
 
+    def __iter__(self):
+        return iter(self.components)
+
     def get_iterator(self):
         return CyclicIterator(self.components)
 

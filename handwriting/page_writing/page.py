@@ -1,4 +1,6 @@
 import pickle
+from pickletools import optimize
+
 from math import sqrt
 from pathlib import Path
 
@@ -71,7 +73,7 @@ class Page(LengthObjectSerializer):
                     self.write_length_object(fout, page_name_bytes)
 
                     grid_bytes = pickle.dumps(self.page_transform)
-                    self.write_length_object(fout, grid_bytes, 4)
+                    self.write_length_object(fout, optimize(grid_bytes), 4)
 
                     pickle.dump(self._image_initial, fout)
 

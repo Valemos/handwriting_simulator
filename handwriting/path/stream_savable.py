@@ -1,5 +1,7 @@
 import io
 import pickle
+from pickletools import optimize
+
 from abc import ABC
 
 from handwriting.length_object_serializer import LengthObjectSerializer
@@ -9,10 +11,10 @@ class IStreamSavable(LengthObjectSerializer, ABC):
 
     def write_to_stream(self, byte_stream):
         try:
-            b = pickle.dumps(self)
-            assert len(b) <= 2147483647
+            bytes_ = pickle.dumps(self)
+            assert len(bytes_) <= 2147483647
 
-            self.write_length_object(byte_stream, b, 4)
+            self.write_length_object(byte_stream, optimize(bytes_), 4)
 
         except (pickle.PicklingError, AssertionError):
             print("error saving curve to bytes!")

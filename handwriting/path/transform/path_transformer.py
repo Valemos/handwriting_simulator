@@ -1,31 +1,14 @@
 from copy import deepcopy
 
 from handwriting.path.curve.point import Point
-from handwriting.path.handwritten_path import HandwrittenPath
 from handwriting.path.i_curve_collection import ICurveCollection
 from handwriting.path.transform.i_path_transformer import IPathTransformer
 
 
 class PathTransformer(IPathTransformer):
 
-    def __init__(self, path: ICurveCollection):
-        super().__init__()
-        self.original_path: ICurveCollection = path
-        self.transformed_path: ICurveCollection = None
-
-    def get_result(self):
-        return self.transformed_path
-
-    def transform_invalid(self, function, *params):
-        if self.is_repeated_transform(function, *params):
-            return True
-        else:
-            # new transformation must be applied to original path
-            self.transformed_path = self.path_copy()
-            return False
-
-    def path_copy(self):
-        return deepcopy(self.original_path)
+    def __init__(self, path: ICurveCollection, inplace=False):
+        super().__init__(path, inplace)
 
     def scale(self, x_scale=1, y_scale=1):
         if self.transform_invalid(self.scale, x_scale, y_scale):
@@ -35,12 +18,12 @@ class PathTransformer(IPathTransformer):
         if x_scale == 1 and y_scale == 1:
             return
 
-        for curve in self.transformed_path.get_curves():
+        for curve in self.transformed.get_curves():
             self._scale_inplace(curve.start_shift, x_scale, y_scale)
             curve.components = [self._scale_inplace(i, x_scale, y_scale) for i in curve.components]
 
         # round shifts to integer values
-        self.coalesce_points(self.transformed_path)
+        self.coalesce_points(self.transformed)
 
     @staticmethod
     def _scale_inplace(point: Point, x_scale: float, y_scale: float):

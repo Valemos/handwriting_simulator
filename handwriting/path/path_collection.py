@@ -10,6 +10,9 @@ class PathDrawableCollection(ILineIterable):
     def __init__(self, paths: list = None):
         self.paths = paths if paths is not None else []
 
+    def __iter__(self):
+        return iter(self.paths)
+
     def get_iterator(self, shift: Point = None) -> Iterator:
         return iter(self.paths)
 

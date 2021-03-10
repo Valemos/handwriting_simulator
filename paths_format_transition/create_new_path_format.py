@@ -1,5 +1,7 @@
 from pathlib import Path
 import pickle
+from pickletools import optimize
+
 from handwriting.path.handwritten_path import HandwrittenPath
 from handwriting.path.path_group import PathGroup
 from handwriting.path.curve.point import Point
