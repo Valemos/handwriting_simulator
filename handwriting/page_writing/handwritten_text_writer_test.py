@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from PIL import Image, ImageDraw
 
-from handwriting.page_writing.handwritten_text_writer import HandwrittenTextWriter
+from handwriting.page_writing.handwritten_text_writer import PathTextWriter
 from handwriting.page_writing.page import Page
 from handwriting.path.curve.curve import Curve
 from handwriting.path.handwritten_path import HandwrittenPath
@@ -52,7 +52,7 @@ class TestTextWriter(unittest.TestCase):
     def test_show_image(self):
         test_text = 'a b'
 
-        writer = HandwrittenTextWriter(self.page, self.dictionary)
+        writer = PathTextWriter(self.page, self.dictionary)
         text_path = writer.write_text(test_text)
 
         image = Image.fromarray(np.full((20, 20), 255))
@@ -80,7 +80,7 @@ class TestTextWriter(unittest.TestCase):
     def test_single_letter_written(self):
 
         test_letter = 'a'
-        writer = HandwrittenTextWriter(self.page, self.dictionary)
+        writer = PathTextWriter(self.page, self.dictionary)
         text_path = writer.write_text(test_letter)
         text_path_iter = iter(text_path)
 
@@ -89,7 +89,7 @@ class TestTextWriter(unittest.TestCase):
     def test_multiple_letters_written(self):
         test_text = 'ab'
 
-        writer = HandwrittenTextWriter(self.page, self.dictionary)
+        writer = PathTextWriter(self.page, self.dictionary)
         text_path = writer.write_text(test_text)
         text_path_iter = iter(text_path)
 
@@ -102,7 +102,7 @@ class TestTextWriter(unittest.TestCase):
     def test_space_written(self):
         test_text = 'a a'
 
-        writer = HandwrittenTextWriter(self.page, self.dictionary)
+        writer = PathTextWriter(self.page, self.dictionary)
         writer.set_space_size(5)
         text_path_iter = iter(writer.write_text(test_text))
 

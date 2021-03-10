@@ -18,7 +18,7 @@ from handwriting.gui_parts.menu_with_handler import MenuWithHandler
 from handwriting.page_writing.anchor_points_handlers import AnchorPointHandlers
 from handwriting.page_writing.arrow_button_handlers import ArrowButtonHandlers
 from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
-from handwriting.page_writing.handwritten_text_writer import HandwrittenTextWriter
+from handwriting.page_writing.handwritten_text_writer import PathTextWriter
 from handwriting.page_writing.page import Page
 from handwriting.page_writing.page_button_handlers import PageSwitchHandlers
 from handwriting.page_writing.page_manager import PageManager
@@ -402,11 +402,11 @@ class PageTextWriterApp(tk.Frame,
         if not self.dictionary_manager.exists():
             return
 
-        text_drawer = HandwrittenTextWriter(page, self.dictionary_manager.dictionary)
+        text_drawer = PathTextWriter(page, self.dictionary_manager.dictionary, space_size=50)
 
         page.reset_page()
         draw = ImageDraw.Draw(page.get_draw_image())
-        for p1, p2 in text_drawer.write_text(text):
+        for p1, p2 in text_drawer.write_text(text).get_lines():
             draw.line((*p1, *p2), fill=0, width=3)
 
     def update_pages(self, file_path):

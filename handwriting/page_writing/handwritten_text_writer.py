@@ -9,8 +9,8 @@ from handwriting.path.transform.path_collection_transformer import PathCollectio
 from handwriting.path.transform.path_shift_box import PathShiftBox
 
 
-class HandwrittenTextWriter:
-    def __init__(self, page, dictionary, space_size=0):
+class PathTextWriter:
+    def __init__(self, page, dictionary, space_size=10):
         self.page: Page = page
         self.dictionary: SignatureDictionary = dictionary
         self.dict_transformer = DictionaryTransformer(dictionary)
@@ -22,11 +22,12 @@ class HandwrittenTextWriter:
         borders_path = PathDrawableCollection()
 
         self.dict_transformer.scale(0.5, 0.5)
+        transformed_dict = self.dict_transformer.get_result()
 
-        letter_size: list = self.dict_transformer.get_result().get_max_letter_size()
+        letter_size: list = transformed_dict.get_max_letter_size()
 
         for letter_index, char in enumerate(text_input):
-            char_variants = self.dictionary[char]
+            char_variants = transformed_dict[char]
 
             if char_variants is not None:
                 char_path = char_variants[0]
@@ -39,9 +40,7 @@ class HandwrittenTextWriter:
                 text_path.append(boxed_path)
                 borders_path.append(boxed_path.get_border_path())
 
-        # test path transform
-        path_collection = PathCollectionTransformer(text_path)
-        return path_collection.get_result()
+        return text_path
 
     def get_special_character_path(self, char):
         if char == ' ':

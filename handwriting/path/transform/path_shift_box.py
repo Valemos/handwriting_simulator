@@ -36,12 +36,16 @@ class PathShiftBox(ICurveCollection):
         return self.box_position
 
     def get_iterator(self, shift: Point = None) -> Iterator:
-        shift.shift_inplace(self.rectangle_shift)
-        return self.path.get_iterator(shift)
+        return self.path.get_iterator(self.get_iterator_shift(shift))
 
     def get_lines(self, shift: Point = None):
-        shift.shift_inplace(self.rectangle_shift)
-        return self.path.get_lines(shift)
+        return self.path.get_lines(self.get_iterator_shift(shift))
+
+    def get_iterator_shift(self, position):
+        if position is None:
+            return self.rectangle_shift
+        else:
+            return position.shift(self.rectangle_shift)
 
     def get_curves(self) -> List[Curve]:
         return self.path.get_curves()
