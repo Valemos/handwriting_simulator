@@ -1,14 +1,14 @@
 from typing import Iterator
 
 from handwriting.path.curve.curve import Curve
-from handwriting.path.curve.interface_iterable_curve import ILineIterable
+from handwriting.path.curve.i_line_iterable import ILineIterable
 from handwriting.path.curve.point import Point
-from handwriting.path.positionable import IPositionable
+from handwriting.path.i_curve_collection import ICurveCollection
 from handwriting.path.path_lines_iterator import PathLinesIterator
 from handwriting.path.stream_savable_collection import IStreamSavableCollection
 
 
-class HandwrittenPath(IStreamSavableCollection, ILineIterable, IPositionable):
+class HandwrittenPath(IStreamSavableCollection, ICurveCollection):
     """
     Contains name for path and list of components (canvas_objects of type Curve),
     which represent separate sets of shifts
@@ -26,6 +26,9 @@ class HandwrittenPath(IStreamSavableCollection, ILineIterable, IPositionable):
 
     def get_lines(self, shift: Point = None) -> PathLinesIterator:
         return PathLinesIterator(self, shift)
+
+    def get_curves(self):
+        return self.components
 
     def set_position(self, point: Point):
         if len(self.components) > 0:

@@ -180,7 +180,7 @@ class AnchorManager:
             step_point.y /= line_count
             cur_point = Point(*first_line[point_i])
             for row_iter in range(top_index + 1, top_index + line_count):
-                cur_point = cur_point.shift(step_point)
+                cur_point.shift_inplace(step_point)
                 self.line_iterator[row_iter].append(cur_point)
 
         self.draw_all()

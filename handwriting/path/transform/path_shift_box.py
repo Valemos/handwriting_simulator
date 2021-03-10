@@ -1,13 +1,14 @@
 from collections import Collection
-from typing import Iterator
+from typing import Iterator, List
 
-from handwriting.path.curve.interface_iterable_curve import ILineIterable
+from handwriting.path.curve.curve import Curve
+from handwriting.path.curve.i_line_iterable import ILineIterable
 from handwriting.path.curve.point import Point
 from handwriting.path.handwritten_path import HandwrittenPath
-from handwriting.path.positionable import IPositionable
+from handwriting.path.i_curve_collection import ICurveCollection
 
 
-class PathShiftBox(ILineIterable, IPositionable):
+class PathShiftBox(ICurveCollection):
     """
     wrapper around Handwritten path or Curve
     to shift it according to it's borders
@@ -15,24 +16,24 @@ class PathShiftBox(ILineIterable, IPositionable):
     if box_size is smaller than
     """
 
-    def __init__(self, path: ILineIterable, box_size=None):
+    def __init__(self, path: ICurveCollection, box_size=None):
         """
         Parameters
         ----------
         path        iterable path
         box_size    collection of two numbers (width, height)
         """
-        self.position: Point = Point(0, 0)
+        self.box_position: Point = Point(0, 0)
         self.path = path
 
         self.box, self.box_size = self.get_box_parameters(self.path, box_size)
         self.rectangle_shift: Point = self.get_rectangle_shift(self.box, self.box_size)
 
     def set_position(self, point):
-        self.position = point
+        self.box_position = point
 
     def get_position(self):
-        return self.position
+        return self.box_position
 
     def get_iterator(self, shift: Point = None) -> Iterator:
         shift.shift_inplace(self.rectangle_shift)
@@ -42,9 +43,16 @@ class PathShiftBox(ILineIterable, IPositionable):
         shift.shift_inplace(self.rectangle_shift)
         return self.path.get_lines(shift)
 
+    def get_curves(self) -> List[Curve]:
+        return self.path.get_curves()
+
     @staticmethod
-    def get_path_box(path, position=None):
+    def get_path_box(path: ICurveCollection, position=None):
         """Returns list of 4 values with path borders in order: left right top bottom"""
+
+        if path.points_count() < 2:
+            # path iterator will not return any pair of points
+            return [0] * 4
 
         box = None
         for point1, point2 in path.get_iterator(position):
@@ -79,17 +87,17 @@ class PathShiftBox(ILineIterable, IPositionable):
     def get_border_path(self):
         path = HandwrittenPath()
 
-        cur_point = self.position.copy()
+        cur_point = self.box_position.copy()
         path.append_absolute(cur_point)
 
         cur_point.x += self.box_size[0]  # go left
-        path.append_absolute(cur_point)
+        path.append_absolute(cur_point.copy())
         cur_point.y += self.box_size[1]  # go down
-        path.append_absolute(cur_point)
+        path.append_absolute(cur_point.copy())
         cur_point.x -= self.box_size[0]  # go right
-        path.append_absolute(cur_point)
+        path.append_absolute(cur_point.copy())
         cur_point.y -= self.box_size[1]  # go up
-        path.append_absolute(cur_point)
+        path.append_absolute(cur_point.copy())
 
         return path
 
@@ -98,11 +106,15 @@ class PathShiftBox(ILineIterable, IPositionable):
             raise ValueError("box size must be a tuple of size 2 (width, height)")
 
         box = self.get_path_box(path)
-        desired_size = self.get_box_dimension(desired_size[0], box[0], box[1])
-
-        return box, desired_size
+        return box, (
+            self.get_box_dimension(box[0], box[1], desired_size[0]),  # width
+            self.get_box_dimension(box[2], box[3], desired_size[1])   # height
+        )
 
     @staticmethod
-    def get_box_dimension(desired, border_start, border_end):
+    def get_box_dimension(border_start, border_end, desired=None):
         border_size = border_end - border_start
+        if desired is None:
+            return border_size
+
         return desired if desired >= border_size else border_size

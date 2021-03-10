@@ -22,5 +22,5 @@ class CurveIterator(Iterator):
         Each iteration shifts previous point by next value from Curve shifts
         """
 
-        self.cur_point = self.cur_point.shift(next(self.shifts_iterator))
+        self.cur_point.shift_inplace(next(self.shifts_iterator))
         return self.cur_point

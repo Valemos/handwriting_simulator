@@ -1,5 +1,5 @@
 from handwriting.path.curve.curve_iterator import CurveIterator
-from handwriting.path.curve.interface_iterable_curve import ILineIterable
+from handwriting.path.curve.i_line_iterable import ILineIterable
 from handwriting.path.curve.lines_iterator import LinesIterator
 from handwriting.path.curve.point import Point
 from handwriting.path.positionable import IPositionable
@@ -39,7 +39,7 @@ class Curve(ILineIterable, IPositionable):
 
     def append_shift(self, point: Point):
         self.components.append(point)
-        self.last_absolute_point = self.last_absolute_point.shift(point)
+        self.last_absolute_point.shift_inplace(point)
 
     def append_absolute(self, point: Point):
         self.components.append(point.get_shift(self.last_absolute_point))
@@ -58,7 +58,7 @@ class Curve(ILineIterable, IPositionable):
     def get_last_point(self, shift=None):
         point = self.get_start_shift(shift)
         for i in range(len(self.components)):
-            point = point.shift(self.components[i])
+            point.shift_inplace(self.components[i])
 
         self.last_absolute_point = point
         return point

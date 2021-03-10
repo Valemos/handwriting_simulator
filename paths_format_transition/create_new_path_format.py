@@ -58,7 +58,7 @@ for file in input_files:
                 else:
                     new_path.append_absolute(point)
 
-            if new_path.inner_elements_count() > 10:
+            if new_path.points_count() > 10:
                 remove_empty_curves(new_path)
                 new_path_group.append_path(new_path)
 

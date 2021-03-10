@@ -13,13 +13,17 @@ class HandwrittenTextWriter:
         self.page: Page = page
         self.dictionary: SignatureDictionary = dictionary
 
-        self.space_shift = self.get_space_shift(space_size)
+        self.space_shift: Point = self.get_space_shift(space_size)
 
-    def write_text(self, test_text: str):
+    def write_text(self, text_input: str):
         text_path = PathDrawableCollection()
         borders_path = PathDrawableCollection()
 
-        for char in test_text:
+        # TODO transform dictionary and than construct text to allow letter boxes fit letters
+
+        letter_size: list = self.dictionary.get_max_letter_size()
+
+        for letter_index, char in enumerate(text_input):
             char_variants = self.dictionary[char]
 
             if char_variants is not None:
@@ -28,16 +32,15 @@ class HandwrittenTextWriter:
                 char_path = self.get_special_character_path(char)
 
             if char_path is not None:
-                boxed_path = PathShiftBox(char_path, )
-                boxed_path.set_position(self.get_text_position_point(text_index))
-                text_path.append(boxed_path.path)
+                boxed_path = PathShiftBox(char_path, letter_size)
+                boxed_path.set_position(self.get_letter_position(letter_index, letter_size))
+                text_path.append(boxed_path)
                 borders_path.append(boxed_path.get_border_path())
 
         # test path transform
-        output_path = PathCollectionTransformer(text_path)
-        output_path.scale_path(0.5, 0.5)
-        output_path.transformed_path.set_position(Point(100, 100))
-        return output_path.transformed_path
+        path_collection = PathCollectionTransformer(text_path)
+        path_collection.scale(0.5, 0.5)
+        return path_collection.get_result()
 
     def get_special_character_path(self, char):
         if char == ' ':
@@ -61,5 +64,5 @@ class HandwrittenTextWriter:
     def new_line_path(self):
         return self.space_path()
 
-    def get_text_position_point(self, text_index):
-        return
+    def get_letter_position(self, text_index, size):
+        return Point(text_index * size[0], 0)

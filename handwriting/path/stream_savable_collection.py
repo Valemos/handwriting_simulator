@@ -14,17 +14,10 @@ class IStreamSavableCollection(IStreamSavable, ABC):
     def __getitem__(self, i):
         return self.components[i]
 
+    def __iter__(self):
+        return iter(self.components)
+
     def __eq__(self, o: object) -> bool:
         if isinstance(o, IStreamSavableCollection):
             return self.components == o.components
         return False
-
-    def inner_elements_count(self):
-        total = 0
-        for component in self.components:
-            if isinstance(component, IStreamSavableCollection):
-                total += component.inner_elements_count()
-            else:
-                total += len(component)
-
-        return total

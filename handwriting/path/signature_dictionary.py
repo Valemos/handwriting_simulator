@@ -1,7 +1,9 @@
 from pathlib import Path
 
+from handwriting.path.curve.point import Point
 from handwriting.path.path_group import PathGroup
 from handwriting.path.signature_dictionary_iterator import SignatureDictionaryIterator
+from handwriting.path.transform.path_shift_box import PathShiftBox
 
 
 class SignatureDictionary:
@@ -160,3 +162,16 @@ class SignatureDictionary:
     def get_group_index(self, index):
         return index % len(self.groups) if len(self.groups) > 0 else 0
 
+    def get_max_letter_size(self):
+        """Returns collection of two values (width, height)"""
+        max_size = [0, 0]
+        for group in self.groups:
+            for letter in group:
+                letter.set_position(Point(0, 0))
+                box = PathShiftBox.get_path_box(letter)
+                box_width = PathShiftBox.get_box_dimension(box[0], box[1])
+                box_height = PathShiftBox.get_box_dimension(box[2], box[3])
+                max_size[0] = max(box_width, max_size[0])
+                max_size[1] = max(box_height, max_size[1])
+
+        return max_size
