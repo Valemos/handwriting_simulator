@@ -1,4 +1,3 @@
-import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox
@@ -7,14 +6,15 @@ from tkinter.simpledialog import askstring
 from PIL import ImageDraw
 from PIL.ImageTk import PhotoImage
 
-from handwriting.event_handler import EventManager
+from gui.event_bind_manager import EventBindManager
 from handwriting.grid_manager import GridManager
-from handwriting.gui_parts.button_state import ButtonState
-from handwriting.gui_parts.button_with_two_states import ButtonWithTwoStates
-from handwriting.gui_parts.entry_integer_with_label import EntryIntegerWithLabel
-from handwriting.gui_parts.entry_with_label import EntryWithLabel
-from handwriting.gui_parts.left_right_buttons import LeftRightButtons
-from handwriting.gui_parts.menu_with_handler import MenuWithHandler
+from gui import ButtonState
+from gui import ButtonTwoStates
+from gui import EntryIntegerWithLabel
+from gui.entry_with_label import EntryWithLabel
+from gui.left_right_buttons import LeftRightButtons
+from gui import MenuWithHandler
+from handwriting.misc.exceptions import ObjectNotFound, SavingException
 from handwriting.page_writing.anchor_points_handlers import AnchorPointHandlers
 from handwriting.page_writing.arrow_button_handlers import ArrowButtonHandlers
 from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
@@ -22,13 +22,13 @@ from handwriting.page_writing.handwritten_text_writer import PathTextWriter
 from handwriting.page_writing.page import Page
 from handwriting.page_writing.page_button_handlers import PageSwitchHandlers
 from handwriting.page_writing.page_manager import PageManager
-from handwriting.path.dictionary_manager import DictionaryManager
+from handwriting.paths_dictionary.dictionary_manager import DictionaryManager
 from handwriting.path.curve.point import Point
 
 
 class PageTextWriterApp(tk.Frame,
                         GridManager,
-                        EventManager,
+                        EventBindManager,
                         ArrowButtonHandlers):
     default_pages_directory = Path("../pages")
 
@@ -134,7 +134,7 @@ class PageTextWriterApp(tk.Frame,
         btn_save_pages = tk.Button(root, text="Save pages", width=grid_width,
                                    command=self.save_pages_to_files)
 
-        self.button_edit_anchors = ButtonWithTwoStates(
+        self.button_edit_anchors = ButtonTwoStates(
             root, grid_width,
             ButtonState("Edit anchors", self.enable_edit_anchor_points),
             ButtonState("Stop edit anchors", self.disable_edit_anchor_points)
@@ -165,7 +165,7 @@ class PageTextWriterApp(tk.Frame,
             [(self.entry_draw_text, {"columnspan": 4})]
         ]
 
-        # if argument not specifyed explicitly, take it from global arguments
+        # if argument not specified explicitly, take it from global arguments
         global_arguments = {"padx": 4, "pady": 4, "sticky": tk.EW}
 
         columns_count = max(len(row) for row in widgets_table_rows)
@@ -208,7 +208,9 @@ class PageTextWriterApp(tk.Frame,
 
     def open_dictionary(self, path: str):
         self.root.focus()
-        edited_path = self.dictionary_manager.read_from_file(path)
+
+        correct_path = self.dictionary_manager
+        edited_path = self.dictionary_manager.read_file(path)
         self.entry_dict_path.set(str(edited_path))
 
     def get_pages_directory(self, directory_str: str = None):
@@ -248,11 +250,13 @@ class PageTextWriterApp(tk.Frame,
     def save_pages_to_files(self):
         self.disable_edit_anchor_points()
         for page in self.pages_manager.pages:
-            page.save_file()
+            try:
+                page.save_file()
+            except SavingException as exc:
+                print(exc)
 
     def handle_reset_text(self, event=None):
-        self.pages_manager.current_page()._image_text = None
-        self.pages_manager.current_page().set_current_image_initial()
+        self.pages_manager.get_page().reset()
         self.update_current_page()
 
     def handle_delete_page(self, event=None):
@@ -310,7 +314,7 @@ class PageTextWriterApp(tk.Frame,
 
     def handle_canvas_leave(self, event=None):
         if event.widget == self.canvas:
-            if self.pages_manager.check_started_anchor_editing():
+            if self.pages_manager.is_started_anchor_editing():
                 self.pages_manager.anchor_manager.delete_temp_point()
                 self.continue_point_redraw = False
 
@@ -318,28 +322,26 @@ class PageTextWriterApp(tk.Frame,
         self.mouse_position = Point(event.x, event.y)
 
     def handle_left_mouse_release(self, event):
-        if self.pages_manager.check_started_anchor_editing():
-            self.pages_manager.anchor_manager.update_current_point(Point(event.x, event.y))
+        if self.pages_manager.is_started_anchor_editing():
+            self.pages_manager.anchor_manager.update_current(Point(event.x, event.y))
 
-            if self.pages_manager.anchor_manager.get_current_point() is not None:
-                self.pages_manager.anchor_manager.move_right()
-
+            self.pages_manager.anchor_manager.move_right()
             self.update_anchor_indices()
 
     def handle_right_mouse_release(self, event):
-        if self.pages_manager.check_started_anchor_editing():
+        if self.pages_manager.is_started_anchor_editing():
             self.pages_manager.anchor_manager.delete_current_point()
             self.update_anchor_indices()
 
     def constant_redraw_last_anchor(self, point):
-        if self.pages_manager.check_started_anchor_editing():
+        if self.pages_manager.is_started_anchor_editing():
             self.pages_manager.anchor_manager.redraw_pointer_point(point)
 
         if self.continue_point_redraw:
             self.root.after(17, self.constant_redraw_last_anchor, self.mouse_position)
 
     def handle_next_page(self, event=None):
-        if self.pages_manager.check_started_anchor_editing():
+        if self.pages_manager.is_started_anchor_editing():
             self.disable_edit_anchor_points()
 
         self.pages_manager.next_page()
@@ -347,7 +349,7 @@ class PageTextWriterApp(tk.Frame,
         self.update_page_name()
 
     def handle_prev_page(self, event=None):
-        if self.pages_manager.check_started_anchor_editing():
+        if self.pages_manager.is_started_anchor_editing():
             self.disable_edit_anchor_points()
 
         self.pages_manager.previous_page()
@@ -355,8 +357,11 @@ class PageTextWriterApp(tk.Frame,
         self.update_page_name()
 
     def update_anchor_indices(self):
-        indices = self.pages_manager.get_anchor_indices()
-        indices = indices if indices != (None, None) else ("-", "-")
+        try:
+            indices = self.pages_manager.get_anchor_indices()
+        except ObjectNotFound:
+            indices = ("-", "-")
+
         anchor_indices_string = self.format_anchor_index.format(*indices)
         self.var_anchor_indices.set(anchor_indices_string)
 
@@ -364,7 +369,7 @@ class PageTextWriterApp(tk.Frame,
         self.reset_canvas()
         self.update_anchor_indices()
         if self.pages_manager.page_exists():
-            page = self.pages_manager.current_page()
+            page = self.pages_manager.get_page()
             self.current_page_image = self.get_canvas_image(page.get_draw_image())
             self.canvas.create_image((0, 0), anchor=tk.NW, image=self.current_page_image)
         else:
@@ -380,18 +385,18 @@ class PageTextWriterApp(tk.Frame,
     def update_pages_menu(self):
         choices = None
         if len(self.pages_manager.pages) > 0:
-            choices = {self.pages_manager.pages[page_i].name: page_i for page_i in range(len(self.pages_manager.pages))}
+            choices = [self.pages_manager.pages[page_i].name for page_i, _ in enumerate(self.pages_manager.pages)]
 
         self.menu_pages.update_choices(choices)
 
     def update_page_name(self):
         if self.pages_manager.page_exists():
-            self.menu_pages.set(self.pages_manager.current_page().name)
+            self.menu_pages.set(self.pages_manager.get_page().name)
 
     def handle_draw_text(self, event=None):
         text = self.entry_draw_text.get(1.0, tk.END)
         if self.pages_manager.page_exists():
-            current_page = self.pages_manager.current_page()
+            current_page = self.pages_manager.get_page()
         else:
             current_page = self.pages_manager.create_empty_page()
 
@@ -405,9 +410,8 @@ class PageTextWriterApp(tk.Frame,
         text_drawer = PathTextWriter(page, self.dictionary_manager.dictionary, space_size=50)
 
         page.reset_page()
-        draw = ImageDraw.Draw(page.get_draw_image())
-        for p1, p2 in text_drawer.write_text(text).get_lines():
-            draw.line((*p1, *p2), fill=0, width=3)
+        image_draw = ImageDraw.Draw(page.get_draw_image())
+        text_drawer.write_text(text).draw(image_draw)
 
     def update_pages(self, file_path):
         self.pages_manager.pages = []
@@ -424,7 +428,7 @@ class PageTextWriterApp(tk.Frame,
         if self.pages_manager.page_exists():
             new_name = askstring("Rename", "Enter new page name")
             if new_name is not None:
-                self.pages_manager.current_page().set_name(new_name)
+                self.pages_manager.get_page().set_name(new_name)
                 self.update_pages_menu()
                 self.update_page_name()
 

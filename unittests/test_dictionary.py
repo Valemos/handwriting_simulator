@@ -1,4 +1,3 @@
-import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -6,8 +5,7 @@ from unittest.mock import patch
 import sys
 sys.path.append(r"D:\coding\Python_codes\Handwriting_extractor_project")
 
-from handwriting.path.path_group import PathGroup
-from handwriting.path.signature_dictionary import SignatureDictionary
+from handwriting.paths_dictionary.signature_dictionary import SignatureDictionary
 
 
 class TestDictionary(unittest.TestCase):

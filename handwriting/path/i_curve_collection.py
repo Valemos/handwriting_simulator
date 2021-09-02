@@ -3,7 +3,7 @@ from typing import List
 
 from handwriting.path.curve.curve import Curve
 from handwriting.path.curve.i_line_iterable import ILineIterable
-from handwriting.path.positionable import IPositionable
+from handwriting.misc.positionable import IPositionable
 
 
 class ICurveCollection(ILineIterable, IPositionable, metaclass=ABCMeta):

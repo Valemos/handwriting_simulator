@@ -1,7 +1,7 @@
 from collections import Iterator
 
 from handwriting.path.curve.lines_iterator import LinesIterator
-from handwriting.updateable_iterator import UpdatableIterator
+from handwriting.misc.updateable_iterator import UpdatableIterator
 
 
 class PathLinesIterator(Iterator):

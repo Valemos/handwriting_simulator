@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from handwriting.path.path_group import PathGroup
+from handwriting.paths_dictionary.path_group import PathGroup
 
 inp_file = next(Path("../letters/").glob("*.dat"))
 

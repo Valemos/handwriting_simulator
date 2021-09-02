@@ -1,6 +1,4 @@
-from copy import deepcopy
-
-from handwriting.path.signature_dictionary import SignatureDictionary
+from handwriting.paths_dictionary.signature_dictionary import SignatureDictionary
 from handwriting.path.transform.i_path_transformer import IPathTransformer
 from handwriting.path.transform.path_transformer import PathTransformer
 

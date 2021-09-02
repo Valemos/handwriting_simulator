@@ -1,11 +1,11 @@
+from handwriting.misc.exceptions import ObjectNotFound
 from handwriting.path.transform.dictionary_transformer import DictionaryTransformer
-from handwriting.path.path_collection import PathDrawableCollection
+from handwriting.paths_dictionary.path_collection import PathDrawableCollection
 from handwriting.path.curve.curve import Curve
 from handwriting.path.handwritten_path import HandwrittenPath
-from handwriting.path.signature_dictionary import SignatureDictionary
+from handwriting.paths_dictionary.signature_dictionary import SignatureDictionary
 from handwriting.page_writing.page import Page
 from handwriting.path.curve.point import Point
-from handwriting.path.transform.path_collection_transformer import PathCollectionTransformer
 from handwriting.path.transform.path_shift_box import PathShiftBox
 
 
@@ -48,8 +48,7 @@ class PathTextWriter:
         elif char == '\n':
             return self.new_line_path()
         else:
-            print(f"'{repr(char)}' not found in dictionary")
-            return None
+            raise ObjectNotFound(f"'{repr(char)}' not found in dictionary")
 
     @staticmethod
     def get_space_shift(space_size):

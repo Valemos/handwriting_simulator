@@ -1,11 +1,10 @@
-from handwriting.length_object_serializer import LengthObjectSerializer
 from handwriting.path.curve.point import Point
 
 import numpy as np
 from numpy.linalg import norm
 
 
-class PageTransformGrid(LengthObjectSerializer):
+class PageTransformGrid:
     """
     Holds grid of anchor points and applies transformation
     for intermediate points passed to transform grid

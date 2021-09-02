@@ -1,4 +1,4 @@
-from handwriting.path.path_collection import PathDrawableCollection
+from handwriting.paths_dictionary.path_collection import PathDrawableCollection
 from handwriting.path.transform.i_path_transformer import IPathTransformer
 from handwriting.path.transform.path_transformer import PathTransformer
 

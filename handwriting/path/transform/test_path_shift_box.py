@@ -15,14 +15,14 @@ class TestPathShiftBox(TestCase):
 
     def test_get_path_box(self):
         box = PathShiftBox.get_path_box(self.path)
-        self.assertEqual(box, [20, 28, 20, 30])
+        self.assertEqual([20, 28, 20, 30], box)
 
     def test_get_shifted_path_box(self):
         self.path.set_position(Point(0, 0))
         box = PathShiftBox.get_path_box(self.path)
-        self.assertEqual(box, [0, 8, 0, 10])
+        self.assertEqual([0, 8, 0, 10], box)
 
     def test_get_rectangle_shift(self):
         box = PathShiftBox.get_path_box(self.path)
         shift = PathShiftBox.get_rectangle_shift(box, (50, 50))
-        self.assertEqual(shift, Point(-20, 20))
+        self.assertEqual(Point(-20, 20), shift)

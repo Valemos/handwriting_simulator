@@ -7,9 +7,9 @@ from handwriting.page_writing.handwritten_text_writer import PathTextWriter
 from handwriting.page_writing.page import Page
 from handwriting.path.curve.curve import Curve
 from handwriting.path.handwritten_path import HandwrittenPath
-from handwriting.path.path_group import PathGroup
+from handwriting.paths_dictionary.path_group import PathGroup
 from handwriting.path.curve.point import Point
-from handwriting.path.signature_dictionary import SignatureDictionary
+from handwriting.paths_dictionary.signature_dictionary import SignatureDictionary
 
 
 class TestTextWriter(unittest.TestCase):
@@ -62,7 +62,7 @@ class TestTextWriter(unittest.TestCase):
         try:
             while True:
                 p1, p2 = next(it)
-                draw.line((*p1, *p2), 0)
+                draw.line((p1.x, p1.y, p2.x, p2.y), 0)
         except StopIteration:
             image.resize((100, 100)).show()
 

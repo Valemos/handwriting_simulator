@@ -2,7 +2,7 @@ import copy
 import io
 import unittest
 
-from handwriting.path.curve import Curve
+from handwriting.path.curve.curve import Curve
 from handwriting.path.handwritten_path import HandwrittenPath
 from handwriting.path.curve.point import Point
 
@@ -13,7 +13,7 @@ class TestHandwrittenPath(unittest.TestCase):
     def init_path():
         return HandwrittenPath(curves=[
             Curve([Point(1, 1), Point(1, 1), Point(1, 1)]),
-            Curve(shift_point=Point(10, 10)),
+            Curve(start_shift=Point(10, 10)),
             Curve([Point(1, 1)])])
 
     @staticmethod

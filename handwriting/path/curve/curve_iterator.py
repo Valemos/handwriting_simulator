@@ -1,6 +1,6 @@
 from collections import Iterator
 
-from handwriting.updateable_iterator import UpdatableIterator
+from handwriting.misc.updateable_iterator import UpdatableIterator
 
 
 class CurveIterator(Iterator):

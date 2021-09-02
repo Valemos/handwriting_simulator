@@ -5,10 +5,11 @@ from handwriting.path.curve.i_line_iterable import ILineIterable
 from handwriting.path.curve.point import Point
 from handwriting.path.i_curve_collection import ICurveCollection
 from handwriting.path.path_lines_iterator import PathLinesIterator
-from handwriting.path.stream_savable_collection import IStreamSavableCollection
+from handwriting.misc.stream_savable import IStreamSavable
+from handwriting.path.i_collection import ICollection
 
 
-class HandwrittenPath(IStreamSavableCollection, ICurveCollection):
+class HandwrittenPath(ICollection, ICurveCollection, IStreamSavable):
     """
     Contains name for path and list of components (canvas_objects of type Curve),
     which represent separate sets of shifts
@@ -76,3 +77,7 @@ class HandwrittenPath(IStreamSavableCollection, ICurveCollection):
 
     def append(self, path: ILineIterable):
         self.components.append(path)
+
+    @staticmethod
+    def empty_instance():
+        return HandwrittenPath("")

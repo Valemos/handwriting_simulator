@@ -34,7 +34,7 @@ class TestAnchorPoints(unittest.TestCase):
                          self.app.pages_manager.anchor_manager.get_current_point())
 
     def test_draw_multiple_anchors(self):
-        self.app.pages_manager.current_page().lines_points = [
+        self.app.pages_manager.get_page().lines_points = [
             [Point(100, 150), Point(120, 80), Point(116, 90)]
         ]
         self.app.handle_edit_page_points()

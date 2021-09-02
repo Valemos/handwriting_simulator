@@ -17,7 +17,7 @@ class TestPathLinesIterator(TestCase):
         self.path.append_shift(Point(1, 2))
         self.path.get_last_point()
 
-        self.path_iter = self.path.get_iterator()
+        self.path_iter = self.path.get_lines()
 
         self.expected_lines = [
             (Point(0, 0), Point(1, 2)),
@@ -55,7 +55,7 @@ class TestPathLinesIterator(TestCase):
     def test_empty_path_filled(self):
         path = HandwrittenPath()
 
-        itr = path.get_iterator()
+        itr = path.get_lines()
 
         itr.new_curve(Point(50, 50))
         itr.append_absolute(Point(55, 55))

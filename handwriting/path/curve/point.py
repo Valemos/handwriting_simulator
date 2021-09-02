@@ -13,9 +13,6 @@ class Point:
     def __hash__(self):
         return id(self)
 
-    def __iter__(self):
-        return (i for i in (self.x, self.y))
-
     def __sub__(self, other):
         return Point(self.x - other.x, self.y - other.y)
 
@@ -47,3 +44,6 @@ class Point:
     @staticmethod
     def from_byte(data, byte_len=2):
         return Point(int.from_bytes(data[:byte_len], 'big'), int.from_bytes(data[byte_len:], 'big'))
+
+    def is_empty(self):
+        return self.x is None or self.y is None

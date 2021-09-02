@@ -2,7 +2,7 @@ from handwriting.path.curve.curve_iterator import CurveIterator
 from handwriting.path.curve.i_line_iterable import ILineIterable
 from handwriting.path.curve.lines_iterator import LinesIterator
 from handwriting.path.curve.point import Point
-from handwriting.path.positionable import IPositionable
+from handwriting.misc.positionable import IPositionable
 
 
 class Curve(ILineIterable, IPositionable):

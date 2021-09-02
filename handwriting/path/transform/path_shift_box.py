@@ -121,4 +121,4 @@ class PathShiftBox(ICurveCollection):
         if desired is None:
             return border_size
 
-        return desired if desired >= border_size else border_size
+        return max(desired, border_size)
