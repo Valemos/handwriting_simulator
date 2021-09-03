@@ -39,13 +39,13 @@ class SignatureDictionaryIterator:
         else:
             self.variant_iter.prev()
 
-    def get_path_or_raise(self) -> HandwrittenPath:
+    def get_variant_or_raise(self) -> HandwrittenPath:
         return self.variant_iter.get_or_raise()
 
     def get_group_or_raise(self) -> PathGroup:
         return self.group_iter.get_or_raise()
 
-    def get_path_or_none(self) -> Union[HandwrittenPath, None]:
+    def get_variant_or_none(self) -> Union[HandwrittenPath, None]:
         return self.variant_iter.get_or_none()
 
     def get_group_or_none(self) -> Union[PathGroup, None]:
@@ -76,8 +76,9 @@ class SignatureDictionaryIterator:
         self.update_variant()
         self.variant_iter.select(new_variant)
 
-    def is_empty(self):
-        if self.dictionary is None:
-            return True
-        else:
-            return self.group_iter.empty()
+    def get_current_labels(self):
+        group = self.get_group_or_none()
+        variant = self.get_variant_or_none()
+
+        return group.name if group is not None else None, \
+                variant.name if variant is not None else None

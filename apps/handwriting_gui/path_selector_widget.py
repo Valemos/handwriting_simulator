@@ -24,23 +24,17 @@ class PathSelectorWidget(tk.Frame):
         buttons_move_paths.pack(side="left")
 
     def handle_group_chosen(self, index):
-        if not self.dictionary_manager.exists(): return
-
         self.dictionary_manager.iterator.select_group(index)
         self.path_drawer.redraw()
         self.update_menus()
 
     def handle_variant_chosen(self, variant_index):
-        if not self.dictionary_manager.exists(): return
-
         group_index = self.dictionary_manager.iterator.group_iter.index
         self.dictionary_manager.iterator.select_group(group_index)
         self.dictionary_manager.iterator.select_variant(variant_index)
         self.update_menu_labels()
 
     def handle_next_letter(self, event=None):
-        if not self.dictionary_manager.exists(): return
-
         prev_group = self.dictionary_manager.iterator.get_group_or_none()
 
         self.dictionary_manager.iterator.next()
@@ -51,8 +45,6 @@ class PathSelectorWidget(tk.Frame):
             self.update_menu_variants()
 
     def handle_prev_letter(self, event=None):
-        if not self.dictionary_manager.exists(): return
-
         prev_group = self.dictionary_manager.iterator.get_group_or_none()
 
         self.dictionary_manager.iterator.prev()
@@ -63,15 +55,11 @@ class PathSelectorWidget(tk.Frame):
             self.update_menu_variants()
 
     def update_menu_groups(self):
-        if not self.dictionary_manager.exists(): return
-
         all_groups = self.dictionary_manager.dictionary.groups
         choices = [all_groups[i].name for i, _ in enumerate(all_groups)]
         self.menu_path_group.update_choices(choices)
 
     def update_menu_variants(self):
-        if not self.dictionary_manager.exists(): return
-
         group = self.dictionary_manager.iterator.get_group_or_none()
         if group is None: return
 
@@ -79,23 +67,12 @@ class PathSelectorWidget(tk.Frame):
         self.menu_path_variant.update_choices(choices)
 
     def update_menu_labels(self):
-        if not self.dictionary_manager.exists():
-            self.menu_path_group.set(None)
-            self.menu_path_variant.set(None)
-            return
+        group, variant_name = self.dictionary_manager.iterator.get_current_labels()
 
-        try:
-            current_group = self.dictionary_manager.iterator.get_group_or_raise()
-            self.menu_path_group.set(current_group.name)
-            current_path = self.dictionary_manager.iterator.get_path_or_raise()
-            self.update_menu_variant_name(current_path.name)
-        except ObjectNotFound:
-            self.menu_path_group.set(None)
-            self.menu_path_variant.set(None)
+        self.menu_path_group.set(group)
 
-    def update_menu_variant_name(self, new_name):
         variant_index = self.dictionary_manager.iterator.variant_iter.index + 1
-        self.menu_path_variant.set_indexed_name(variant_index, new_name)
+        self.menu_path_variant.set_indexed_name(variant_index, variant_name)
 
     def update_menus(self):
         self.update_menu_groups()

@@ -16,5 +16,5 @@ class MenuIndexedWithHandler(MenuWithHandler):
 
         super().update_choices(new_choices)
 
-    def set_indexed_name(self, index, group_name):
-        super().set(self.indexed_name(index, group_name))
+    def set_indexed_name(self, index, name):
+        super().set(self.indexed_name(index, name) if name is not None else None)

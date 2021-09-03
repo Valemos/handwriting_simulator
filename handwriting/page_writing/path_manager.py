@@ -18,7 +18,7 @@ def load_paths_file(file_path, is_shift=False):
 
 def draw_path(path, draw_obj, draw_color=(0, 0, 0), draw_w=4, shift=None):
     last_point = None
-    for point in path.get_path_or_raise(shift):
+    for point in path.get_variant_or_raise(shift):
         if point != path.break_point:
             if last_point != None and last_point != path.break_point:
                 draw_obj.line((*last_point, *point), fill=draw_color, width=draw_w)
@@ -33,7 +33,7 @@ def draw_rect(borders, draw, accent_color=(255, 100, 100), draw_w=2):
 
 
 def calc_path_rect(path, shift=None):
-    points = path.get_path_or_raise(shift)
+    points = path.get_variant_or_raise(shift)
 
     not_br = 0
     while points[not_br] == path.break_point: not_br += 1

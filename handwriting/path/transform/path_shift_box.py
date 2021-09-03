@@ -1,4 +1,5 @@
 from collections import Collection
+from dataclasses import dataclass
 from typing import Iterator, List
 
 from handwriting.path.curve.curve import Curve
@@ -6,6 +7,14 @@ from handwriting.path.curve.i_line_iterable import ILineIterable
 from handwriting.path.curve.point import Point
 from handwriting.path.handwritten_path import HandwrittenPath
 from handwriting.path.i_curve_collection import ICurveCollection
+
+
+@dataclass
+class Box:
+    min_x: float
+    max_x: float
+    min_y: float
+    max_y: float
 
 
 class PathShiftBox(ICurveCollection):
@@ -51,28 +60,28 @@ class PathShiftBox(ICurveCollection):
         return self.path.get_curves()
 
     @staticmethod
-    def get_path_box(path: ICurveCollection, position=None):
+    def get_path_box(path: ICurveCollection, position=None) -> Box:
         """Returns list of 4 values with path borders in order: left right top bottom"""
 
         if path.points_count() < 2:
             # path iterator will not return any pair of points
-            return [0] * 4
+            return Box(0, 0, 0, 0)
 
-        box = None
-        for point1, point2 in path.get_iterator(position):
-            if box is None:
-                box = [point1.x, point1.x, point1.y, point1.y]
+        path_iter = path.get_iterator(position)
+        point1, point2 = next(path_iter)
+        box = Box(min_x=point1.x, max_x=point1.x, min_y=point1.y, max_y=point1.y)
 
-            box[0] = min(box[0], point1.x, point2.x)
-            box[1] = max(box[1], point1.x, point2.x)
+        for point1, point2 in path_iter:
+            box.min_x = min(box.min_x, point1.x, point2.x)
+            box.max_x = max(box.max_x, point1.x, point2.x)
 
-            box[2] = min(box[2], point1.y, point2.y)
-            box[3] = max(box[3], point1.y, point2.y)
+            box.min_y = min(box.min_y, point1.y, point2.y)
+            box.max_y = max(box.max_y, point1.y, point2.y)
 
         return box
 
     @classmethod
-    def get_rectangle_shift(cls, path_box, size) -> Point:
+    def get_rectangle_shift(cls, box: Box, size) -> Point:
         """
         Rectangle will be aligned to bottom left corner
         top left corner is (0, 0)
@@ -82,9 +91,9 @@ class PathShiftBox(ICurveCollection):
         """
         shift = Point(0, 0)
         # displacement from start to left border
-        shift.x -= path_box[0]
+        shift.x -= box.min_x
         # desired box height minus displacement down from beginning
-        shift.y += size[1] - path_box[3]
+        shift.y += size[1] - box.max_y
 
         return shift
 
@@ -112,7 +121,7 @@ class PathShiftBox(ICurveCollection):
         box = self.get_path_box(path)
         return box, (
             self.get_box_dimension(box[0], box[1], desired_size[0]),  # width
-            self.get_box_dimension(box[2], box[3], desired_size[1])   # height
+            self.get_box_dimension(box[2], box[3], desired_size[1])  # height
         )
 
     @staticmethod

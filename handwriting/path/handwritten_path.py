@@ -46,7 +46,7 @@ class HandwrittenPath(ICollection, ICurveCollection, IStreamSavable):
         previous = previous if previous is not None else Point(0, 0)
         curve_shift = start.get_shift(previous)
 
-        curve = Curve(start_shift=curve_shift)
+        curve = Curve(start=curve_shift)
         curve.last_absolute_point = start  # must be assigned to continue adding points to curve
 
         self.components.append(curve)
@@ -64,7 +64,7 @@ class HandwrittenPath(ICollection, ICurveCollection, IStreamSavable):
             self.new_curve(point)
 
     def empty(self):
-        return self.name == '' and len(self.components) > 0
+        return len(self.components) > 0
 
     def append_path(self, other_path):
         self.components.extend(other_path.components)

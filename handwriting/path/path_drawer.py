@@ -16,9 +16,10 @@ class PathDrawer:
         self.shift_point = point
 
     def redraw(self):
+
         try:
             self.reset()
-            current_path = self.dictionary_manager.iterator.get_path_or_raise()
+            current_path = self.dictionary_manager.iterator.get_variant_or_raise()
 
             # place path at (0, 0) and shift according to entered shift point
             current_path.set_position(Point(0, 0))
@@ -32,7 +33,8 @@ class PathDrawer:
         self.path_lines_iterator = None
 
     def update_path(self):
-        path = self.dictionary_manager.iterator.get_path_or_none()
+
+        path = self.dictionary_manager.iterator.get_variant_or_none()
         self.path_lines_iterator = path.get_lines() if path is not None else None
 
     def draw_lines_to_end(self, path_iterator):
@@ -45,11 +47,10 @@ class PathDrawer:
 
     def start_curve(self, point):
         if self.path_lines_iterator is None:
-            path = self.dictionary_manager.iterator.get_path_or_none()
+            path = self.dictionary_manager.iterator.get_variant_or_none()
             if path is not None:
                 self.path_lines_iterator = path.get_lines()
 
-        # TODO: maybe draw point here
         self.path_lines_iterator.new_curve(point)
 
     def continue_curve(self, point_absolute):
@@ -57,7 +58,6 @@ class PathDrawer:
         self.draw_lines_to_end(self.path_lines_iterator)
 
     def try_draw(self):
-        if not self.dictionary_manager.exists(): return
         if self.path_lines_iterator is None:
             self.update_path()
 

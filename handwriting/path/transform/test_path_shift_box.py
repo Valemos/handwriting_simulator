@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from handwriting.path.curve.point import Point
 from handwriting.path.handwritten_path import HandwrittenPath
-from handwriting.path.transform.path_shift_box import PathShiftBox
+from handwriting.path.transform.path_shift_box import PathShiftBox, Box
 
 
 class TestPathShiftBox(TestCase):
@@ -15,12 +15,12 @@ class TestPathShiftBox(TestCase):
 
     def test_get_path_box(self):
         box = PathShiftBox.get_path_box(self.path)
-        self.assertEqual([20, 28, 20, 30], box)
+        self.assertEqual(Box(min_x=20, max_x=28, min_y=20, max_y=30), box)
 
     def test_get_shifted_path_box(self):
         self.path.set_position(Point(0, 0))
         box = PathShiftBox.get_path_box(self.path)
-        self.assertEqual([0, 8, 0, 10], box)
+        self.assertEqual(Box(min_x=0, max_x=8, min_y=0, max_y=10), box)
 
     def test_get_rectangle_shift(self):
         box = PathShiftBox.get_path_box(self.path)

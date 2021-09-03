@@ -19,3 +19,6 @@ class ICollection(ABC):
         if isinstance(o, ICollection):
             return self.components == o.components
         return False
+
+    def empty(self):
+        return len(self.components) == 0

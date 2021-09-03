@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PIL import Image
 from handwriting.misc.stream_serialization import *
-from handwriting.misc.exceptions import ObjectNotFound, SavingException
+from handwriting.misc.exceptions import ObjectNotFound, SavingException, LoadingException
 from handwriting.page_writing.page_transform_grid import PageTransformGrid
 
 
@@ -74,19 +74,20 @@ class Page:
                 raise SavingException(f"cannot save page to file {str(self.save_path)}")
 
     @staticmethod
-    def from_file(file_path):
-        if file_path.exists():
-            with file_path.open("rb") as fin:
-                try:
-                    page_name = read_length_object(fin).decode("utf-8")
-                    anchor_points = read_length_object(fin, 4)
-                    anchor_points = pickle.loads(anchor_points)
-                    image = pickle.load(fin)
-                    new_obj = Page(image, page_name, file_path)
-                    new_obj.lines_points = anchor_points
-                    return new_obj
-                except pickle.UnpicklingError:
-                    raise ObjectNotFound(f"cannot load page from file {str(file_path)}")
+    def from_file(file_path: Path):
+        if not file_path.exists(): return
+
+        with file_path.open("rb") as fin:
+            try:
+                page_name = read_length_object(fin).decode("utf-8")
+                anchor_points = read_length_object(fin, 4)
+                anchor_points = pickle.loads(anchor_points)
+                image = pickle.load(fin)
+                new_obj = Page(image, page_name, file_path)
+                new_obj.lines_points = anchor_points
+                return new_obj
+            except pickle.UnpicklingError:
+                raise LoadingException(f"cannot load page from file {str(file_path)}")
 
     def add_line_anchor_point(self, line_index, point):
         self.page_transform.add_anchor(point, line_index)

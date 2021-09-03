@@ -58,7 +58,7 @@ class PathTextWriter:
         self.space_shift = self.get_space_shift(space_size)
 
     def space_path(self):
-        return HandwrittenPath(curves=[Curve(start_shift=self.space_shift)])
+        return HandwrittenPath(curves=[Curve(start=self.space_shift)])
 
     def new_line_path(self):
         return self.space_path()

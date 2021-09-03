@@ -13,7 +13,7 @@ class TestHandwrittenPath(unittest.TestCase):
     def init_path():
         return HandwrittenPath(curves=[
             Curve([Point(1, 1), Point(1, 1), Point(1, 1)]),
-            Curve(start_shift=Point(10, 10)),
+            Curve(start=Point(10, 10)),
             Curve([Point(1, 1)])])
 
     @staticmethod

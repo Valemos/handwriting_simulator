@@ -8,10 +8,17 @@ from handwriting.paths_dictionary.dictionary_manager import DictionaryManager
 
 class DictionaryOpenerWidget(tk.Frame):
 
-    def __init__(self, root, grid_width, path_drawer: PathDrawer):
+    def __init__(self,
+                 root,
+                 grid_width,
+                 path_drawer: PathDrawer,
+                 dictionary_manager: DictionaryManager,
+                 update_menus_callback):
         tk.Frame.__init__(self, root)
         self.parent = root
         self.path_drawer = path_drawer
+        self.dictionary_manager = dictionary_manager
+        self._update_menus_callback = update_menus_callback
 
         self.entry_dict_path = EntryWithLabel(self, "File path:", grid_width * 2, 1 / 3)
         self.btn_save_file = tk.Button(self, text="Save file", command=self.save_to_file, width=grid_width)
@@ -27,16 +34,15 @@ class DictionaryOpenerWidget(tk.Frame):
         dictionary_path = DictionaryManager.get_or_create_path(self.entry_dict_path.get())
         self.entry_dict_path.set(dictionary_path)
 
-        self.path_drawer.dictionary_manager.read_file(dictionary_path)
+        self.dictionary_manager.read_file(dictionary_path)
+        self.path_drawer.redraw()
+        self._update_menus_callback()
 
     def save_to_file(self):
-        if self.path_drawer.dictionary_manager.exists():
-            try:
-                self.path_drawer.dictionary_manager.save_file(self.entry_dict_path.get())
-            except SavingException as exc:
-                print(exc)
-        else:
-            self.path_drawer.dictionary_manager.create_default()
+        try:
+            self.dictionary_manager.save_file(self.entry_dict_path.get())
+        except SavingException as exc:
+            print(exc)
 
     def set_entry(self, path):
         self.entry_dict_path.set(str(path))

@@ -8,7 +8,7 @@ class LinesIterator:
         self.points_iterator = self.parent.get_iterator(shift)
         self.cur_point = self.points_iterator.cur_point
         self.prev_point = None
-        self.finished = False
+        self._finished = False
 
     def next(self):
         self.prev_point = self.cur_point
@@ -16,9 +16,12 @@ class LinesIterator:
         try:
             self.cur_point = next(self.points_iterator)
         except StopIteration:
-            self.finished = True
+            self._finished = True
         finally:
             return self.prev_point, self.cur_point
 
+    def set_finished(self, finished):
+        self._finished = finished
+
     def is_finished(self):
-        return self.finished
+        return self._finished

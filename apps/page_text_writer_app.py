@@ -404,9 +404,6 @@ class PageTextWriterApp(tk.Frame,
         self.update_current_page()
 
     def draw_text_on_page(self, text, page: Page):
-        if not self.dictionary_manager.exists():
-            return
-
         text_drawer = PathTextWriter(page, self.dictionary_manager.dictionary, space_size=50)
 
         page.reset_page()

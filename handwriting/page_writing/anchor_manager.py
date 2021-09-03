@@ -51,7 +51,7 @@ class AnchorManager:
     def redraw_all_points(self):
         for row in self.line_iterator.objects:
             for point in row:
-                if not point.is_empty():
+                if not point.empty():
                     self.redraw_point(point)
 
     def delete_point_canvas_objects(self, point: Point):
@@ -65,7 +65,7 @@ class AnchorManager:
 
     def delete_current_canvas_objects(self):
         try:
-            current_point = self.line_iterator.get_or_raise().get_path_or_raise()
+            current_point = self.line_iterator.get_or_raise().get_variant_or_raise()
             self.delete_point_canvas_objects(current_point)
         except ObjectNotFound:
             pass
@@ -73,7 +73,7 @@ class AnchorManager:
     def redraw_pointer_point(self, new_position: Point):
         self.redraw_temp_point(new_position)
         try:
-            cur_point = self.line_iterator.get_or_raise().get_path_or_raise()
+            cur_point = self.line_iterator.get_or_raise().get_variant_or_raise()
             self.redraw_point(cur_point, "blue")
         except ObjectNotFound:
             pass
@@ -135,7 +135,7 @@ class AnchorManager:
         self.redraw_current_point_black()
 
     def get_current_point(self):
-        return self.line_iterator.get_or_raise().get_path_or_raise()
+        return self.line_iterator.get_or_raise().get_variant_or_raise()
 
     def add_intermediate_lines(self, top_index, bot_index, line_count):
         """Creates a grid of points between two selected lines"""
@@ -183,7 +183,7 @@ class AnchorManager:
     def remove_empty_points(iterator: ExtendingIterator):
         i = 0
         while i < len(iterator):
-            if iterator[i].is_empty():
+            if iterator[i].empty():
                 iterator.objects.pop(i)
             else:
                 i += 1

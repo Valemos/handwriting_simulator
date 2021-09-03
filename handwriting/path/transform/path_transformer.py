@@ -19,7 +19,7 @@ class PathTransformer(IPathTransformer):
             return
 
         for curve in self.transformed.get_curves():
-            self._scale_inplace(curve.start_shift, x_scale, y_scale)
+            self._scale_inplace(curve.start, x_scale, y_scale)
             curve.components = [self._scale_inplace(i, x_scale, y_scale) for i in curve.components]
 
         # round shifts to integer values
@@ -43,9 +43,9 @@ class PathTransformer(IPathTransformer):
             curve_points = curve.components
             new_curve_points = []
 
-            change: Point = curve.start_shift
-            curve.start_shift = Point(round(change.x), round(change.y))
-            change -= curve.start_shift
+            change: Point = curve.start
+            curve.start = Point(round(change.x), round(change.y))
+            change -= curve.start
 
             i = 0
             while i < len(curve_points):

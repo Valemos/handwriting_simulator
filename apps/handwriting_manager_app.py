@@ -26,6 +26,7 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
     def __init__(self, root):
         tk.Frame.__init__(self, root)
         self.parent = root
+        self.parent.title("Handwriting manager")
 
         self._mouse_released = True
         grid_width = 15
@@ -37,23 +38,34 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
         display = CanvasDisplay(self.canvas)
         self.path_drawer = PathDrawer(self.dictionary_manager, display)
 
-        self.point_entry = PointEntry(root, grid_width)
+        shift_frame = tk.Frame(root)
+        label_shift = tk.Label(shift_frame, text="Base shift: ")
+        self.point_entry = PointEntry(shift_frame, grid_width)
         self.point_entry.set(Point(100, 100))
-
-        self.dictionary_opener = DictionaryOpenerWidget(root, grid_width, self.path_drawer)
+        self.path_drawer.set_global_shift(self.point_entry.get_point())
 
         self.path_selector = PathSelectorWidget(root, grid_width, self.path_drawer)
         self.path_selector.update_menu_labels()
 
-        self.dictionary_editor = DictionaryEditorWidget(
-            root,
-            grid_width,
-            self.path_drawer,
-            self.path_selector.update_menus,
-        )
+        self.dictionary_opener = DictionaryOpenerWidget(root,
+                                                        grid_width,
+                                                        self.path_drawer,
+                                                        self.dictionary_manager,
+                                                        self.path_selector.update_menus)
 
-        self.setup_ui()
-        display.reset()
+        self.dictionary_editor = DictionaryEditorWidget(root,
+                                                        grid_width,
+                                                        self.path_drawer,
+                                                        self.dictionary_manager,
+                                                        self.path_selector.update_menus)
+
+        shift_frame.pack(side="top")
+        self.dictionary_opener.pack(side="top")
+        self.path_selector.pack(side="top")
+        self.dictionary_editor.pack(side="top")
+        self.canvas.pack(side="top")
+
+        self.bind_handlers(self.create_events_dict())
 
     @staticmethod
     def main():
@@ -69,29 +81,6 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
         self.dictionary_opener.open_from_entry_path()
         self.path_selector.update_menus()
 
-    def create_ui_grid(self, root):
-        """
-        list of rows with widget canvas_objects, representing grid of corresponding widgets
-        to specify parameters for .grid function object is wrapped into dict with all it's parameters
-        """
-
-        widgets_table_rows = [
-            [tk.Label(root, text="Base shift: "), self.point_entry],
-            [self.dictionary_opener],
-            [self.path_selector],
-            [self.dictionary_editor],
-            [(self.canvas, {"sticky": None})]
-        ]
-
-        # if argument not specified explicitly, take it from global arguments
-        global_arguments = {"columnspan": 6, "padx": 5, "pady": 5, "sticky": tk.EW}
-
-        columns_count = max(len(row) for row in widgets_table_rows)
-        root.columnconfigure(columns_count, weight=1)
-        root.rowconfigure(len(widgets_table_rows), weight=1)
-
-        return widgets_table_rows, global_arguments
-
     def create_events_dict(self):
         return \
             {
@@ -103,20 +92,13 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
                     "Left": (self.parent, self.path_selector.handle_prev_letter),
                     "Right": (self.parent, self.path_selector.handle_next_letter),
                     "Return": [
-                        (self.point_entry.entry_shift_x.entry, self.handle_draw_path),
-                        (self.point_entry.entry_shift_y.entry, self.handle_draw_path),
+                        (self.point_entry.entry_shift_x, self.handle_draw_path),
+                        (self.point_entry.entry_shift_y, self.handle_draw_path),
                     ],
                     "Delete": (self.parent, self.dictionary_editor.handle_delete_path),
                     "space": (self.parent, self.dictionary_editor.handle_create_path)
                 }
             }
-
-    def setup_ui(self):
-        self.parent.title("Handwriting manager")
-
-        put_objects_on_grid(*self.create_ui_grid(self))
-
-        self.bind_handlers(self.create_events_dict())
 
     def handle_motion_draw(self, event):
         if self.path_drawer.try_draw():
@@ -132,8 +114,6 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
         self._mouse_released = True
 
     def redraw_current_path(self):
-        if not self.dictionary_manager.exists(): return
-
         self.path_drawer.set_global_shift(self.point_entry.get_point())
         self.path_drawer.redraw()
 

@@ -45,5 +45,5 @@ class Point:
     def from_byte(data, byte_len=2):
         return Point(int.from_bytes(data[:byte_len], 'big'), int.from_bytes(data[byte_len:], 'big'))
 
-    def is_empty(self):
+    def empty(self):
         return self.x is None or self.y is None

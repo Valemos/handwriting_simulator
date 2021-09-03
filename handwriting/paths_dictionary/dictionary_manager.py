@@ -9,8 +9,8 @@ from handwriting.paths_dictionary.signature_dictionary_iterator import Signature
 class DictionaryManager:
 
     def __init__(self):
-        self.dictionary: SignatureDictionary = None
-        self.iterator: SignatureDictionaryIterator = None
+        self.dictionary: SignatureDictionary = SignatureDictionary()
+        self.iterator: SignatureDictionaryIterator = self.dictionary.get_iterator()
 
     @classmethod
     def get_or_create_path(cls, path_str):
@@ -26,7 +26,7 @@ class DictionaryManager:
         return file_path
 
     @staticmethod
-    def is_valid_dictionary_path(path):
+    def is_valid_dictionary_path(path: Path):
         if path == "" or path is None:
             return False
 
@@ -36,34 +36,25 @@ class DictionaryManager:
         return True
 
     @staticmethod
-    def create_if_not_exists(file_path):
+    def create_if_not_exists(file_path: Path):
         if not file_path.exists():
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.touch()
             messagebox.showinfo('Message', 'Created new file\n' + str(file_path))
         return file_path
 
-    def read_file(self, file):
-        self.dictionary = SignatureDictionary.from_file(file)
+    def read_file(self, file_path: Path):
+        self.dictionary = SignatureDictionary.from_file(file_path)
         self.iterator = self.dictionary.get_iterator()
 
     def create_default(self):
         path = SignatureDictionary.default_path
         self.create_if_not_exists(path)
-        self.dictionary = SignatureDictionary.from_file(path)
-        self.iterator = self.dictionary.get_iterator()
         self.save_file(path)
-        return path
 
     def save_file(self, file_name):
         save_path = self.get_or_create_path(file_name)
         self.dictionary.save_file(save_path)
 
-    def exists(self):
-        return self.dictionary is not None
-
     def size(self):
-        if self.dictionary is not None:
-            return len(self.dictionary)
-        else:
-            return 0
+        return len(self.dictionary)

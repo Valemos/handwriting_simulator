@@ -9,8 +9,8 @@ class PathLinesIterator(Iterator):
     this class returns pairs of points to properly draw lines on canvas
     """
 
-    def __init__(self, obj, shift=None):
-        self.path = obj
+    def __init__(self, path, shift=None):
+        self.path = path
 
         self.curves_iterator = UpdatableIterator(self.path.components)
         self.points: tuple = None, None
@@ -26,7 +26,7 @@ class PathLinesIterator(Iterator):
         self.points = self.lines_iterator.next()
 
         if self.lines_iterator.is_finished():
-            self.lines_iterator.finished = False  # enables iterating when new points are added
+            self.lines_iterator.set_finished(False)  # enables iterating when new points are added
             self.iterate_next_curve(self.points[1])
             self.__next__()
 

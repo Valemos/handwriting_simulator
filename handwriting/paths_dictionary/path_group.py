@@ -47,9 +47,6 @@ class PathGroup(ICollection, IStreamSavable):
     def remove_by_index(self, index):
         self.components.pop(index)
 
-    def empty(self):
-        return self.name == '' and len(self.components) > 0
-
     @staticmethod
     def empty_instance():
         return PathGroup('', [])

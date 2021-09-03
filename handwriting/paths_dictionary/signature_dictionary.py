@@ -80,25 +80,24 @@ class SignatureDictionary:
 
         if isinstance(group_i, str):
             self.remove_group_by_name(group_i)
-
         elif isinstance(group_i, int):
             self.remove_group_by_index(group_i)
-
-        raise ValueError("group id type is incorrect")
+        else:
+            raise ValueError("group id type is incorrect")
 
     def remove_group_by_index(self, group_i):
         if 0 <= group_i < len(self.groups):
             del self.groups_dict[self.groups[group_i].name]
             self.groups.pop(group_i)
-
-        raise ObjectNotFound(f"cannot find group with index {group_i}")
+        else:
+            raise ObjectNotFound(f"cannot find group with index {group_i}")
 
     def remove_group_by_name(self, group_name):
         if group_name in self.groups_dict:
             self.groups.remove(self.groups_dict[group_name])
             del self.groups_dict[group_name]
-
-        raise ObjectNotFound(f"cannot find group with name {group_name}")
+        else:
+            raise ObjectNotFound(f"cannot find group with name {group_name}")
 
     def remove_variant(self, group_i, variant_i):
         try:
