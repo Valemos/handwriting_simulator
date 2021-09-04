@@ -9,7 +9,7 @@ from handwriting.path.path_drawer import PathDrawer
 from handwriting.paths_dictionary.dictionary_manager import DictionaryManager
 from handwriting_gui.dictionary_editor_widget import DictionaryEditorWidget
 from handwriting_gui.dictionary_opener_widget import DictionaryOpenerWidget
-from handwriting_gui.path_selector_widget import PathSelectorWidget
+from handwriting_gui.path_cursor_widget import PathCursorWidget
 from handwriting_gui.point_entry_widget import PointEntry
 
 # testing
@@ -43,25 +43,25 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
 
         self.path_drawer.set_global_shift(self.point_entry.get_point())
 
-        self.path_selector = PathSelectorWidget(root, grid_width, self.path_drawer)
-        self.path_selector.update_menu_labels()
+        self.path_cursor = PathCursorWidget(root, grid_width, self.path_drawer)
+        self.path_cursor.update_menu_labels()
 
         self.dictionary_opener = DictionaryOpenerWidget(root,
                                                         grid_width,
-                                                        self.path_drawer,
                                                         self.dictionary_manager,
-                                                        self.path_selector.update_menus)
+                                                        self.path_drawer.redraw,
+                                                        self.path_cursor.update_menus)
 
         self.dictionary_editor = DictionaryEditorWidget(root,
                                                         grid_width,
-                                                        self.path_drawer,
                                                         self.dictionary_manager,
-                                                        self.path_selector.update_menus)
+                                                        self.path_cursor.update_menus,
+                                                        self.path_drawer.redraw)
 
         put_objects_on_grid([
             [tk.Label(root, text="Base shift: "), self.point_entry],
             [self.dictionary_opener],
-            [self.path_selector],
+            [self.path_cursor],
             [self.dictionary_editor],
             [self.canvas],
         ])
@@ -72,15 +72,15 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
     def main():
         root = tk.Tk()
         app = HandwritingShiftModifier(root)
-        threading.Thread(target=HandwritingShiftModifier.test_init, args=(app,)).start()
+        app.wait_visibility()
+        app.test_init()
         root.mainloop()
 
     def test_init(self):
-        time.sleep(0.001)
         from handwriting.paths_dictionary.signature_dictionary import SignatureDictionary
         self.dictionary_opener.entry_dict_path.set(SignatureDictionary.default_path)
         self.dictionary_opener.open_from_entry_path()
-        self.path_selector.update_menus()
+        self.path_cursor.update_menus()
 
     def create_events_dict(self):
         return \
@@ -90,8 +90,8 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
                     "Motion": (self.canvas, self.handle_motion_draw)
                 },
                 "KeyPress": {
-                    "Left": (self.parent, self.path_selector.handle_prev_letter),
-                    "Right": (self.parent, self.path_selector.handle_next_letter),
+                    "Left": (self.parent, self.path_cursor.handle_prev_letter),
+                    "Right": (self.parent, self.path_cursor.handle_next_letter),
                     "Return": [
                         (self.point_entry.entry_shift_x, self.handle_draw_path),
                         (self.point_entry.entry_shift_y, self.handle_draw_path),

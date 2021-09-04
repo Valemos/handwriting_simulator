@@ -11,13 +11,13 @@ class DictionaryOpenerWidget(tk.Frame):
     def __init__(self,
                  root,
                  grid_width,
-                 path_drawer: PathDrawer,
                  dictionary_manager: DictionaryManager,
-                 update_menus_callback):
+                 dictionary_opened_callback=lambda: None,
+                 update_menus_callback=lambda: None):
         super().__init__(self, root)
         self.parent = root
-        self.path_drawer = path_drawer
         self.dictionary_manager = dictionary_manager
+        self._dictionary_opened_callback = dictionary_opened_callback
         self._update_menus_callback = update_menus_callback
 
         self.entry_dict_path = EntryWithLabel(self, "File path:", grid_width * 2, 1 / 3)
@@ -35,7 +35,7 @@ class DictionaryOpenerWidget(tk.Frame):
         self.entry_dict_path.set(dictionary_path)
 
         self.dictionary_manager.read_file(dictionary_path)
-        self.path_drawer.redraw()
+        self._dictionary_opened_callback()
         self._update_menus_callback()
 
     def save_to_file(self):

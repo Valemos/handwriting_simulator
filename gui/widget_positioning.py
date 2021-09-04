@@ -1,4 +1,4 @@
-def put_objects_on_grid(grid_rows, shared_args=None):
+def put_objects_on_grid(grid_rows, shared_args={}):
     """
     To correctly put canvas_objects in one grid, they must have the same parent element
     That can be packed as grid

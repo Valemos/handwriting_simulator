@@ -14,13 +14,13 @@ class DictionaryEditorWidget(tk.Frame):
     def __init__(self,
                  root,
                  grid_width,
-                 path_drawer: PathDrawer,
                  dictionary_manager: DictionaryManager,
-                 update_menus_callback):
+                 update_menus_callback,
+                 redraw_path_callback):
         super().__init__(self, root)
         self.parent = root
-        self.path_drawer = path_drawer
         self.dictionary_manager = dictionary_manager
+        self._redraw_path_callback = redraw_path_callback
         self._update_menus_callback = update_menus_callback
 
         label_new_names = tk.Label(self, text="New names")
@@ -43,7 +43,7 @@ class DictionaryEditorWidget(tk.Frame):
     def handle_clear_path(self, event=None):
         if self.dictionary_manager.iterator.get_variant_or_raise() is not None:
             self.dictionary_manager.iterator.get_variant_or_raise().components = []
-            self.path_drawer.redraw()
+            self._redraw_path_callback()
 
     def handle_create_path(self, event=None):
         group_name = self.entry_new_group.get()
@@ -60,13 +60,13 @@ class DictionaryEditorWidget(tk.Frame):
             self.create_group(group_name)
         self.create_path_variant(path_name)
 
-        self.path_drawer.reset()
+        self._redraw_path_callback()
         self._update_menus_callback()
         self.parent.focus()
 
     def handle_delete_group(self):
         self.dictionary_manager.iterator.delete_group()
-        self.path_drawer.redraw()
+        self._redraw_path_callback()
         self._update_menus_callback()
 
     def handle_delete_path(self, event=None):
@@ -77,7 +77,7 @@ class DictionaryEditorWidget(tk.Frame):
             return
 
         self.dictionary_manager.iterator.delete_current_variant()
-        self.path_drawer.redraw()
+        self._redraw_path_callback()
         self._update_menus_callback()
 
     def create_group(self, group_name):
@@ -91,7 +91,7 @@ class DictionaryEditorWidget(tk.Frame):
         current_group.append_path(HandwrittenPath(path_name))
         self.dictionary_manager.iterator.select_variant(len(current_group) - 1)
 
-        self.path_drawer.redraw()
+        self._redraw_path_callback()
         self._update_menus_callback()
 
     @staticmethod

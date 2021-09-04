@@ -5,7 +5,7 @@ from handwriting.misc.cyclic_iterator import CyclicIterator
 from handwriting.page_writing.page import Page
 
 
-class PageManager:
+class PagesIterator:
     """
     class allows to store pages and iterate through them
 
@@ -15,37 +15,14 @@ class PageManager:
     def __init__(self):
         self.pages = []
         self.pages_iterator = CyclicIterator(self.pages)
-        self.anchor_manager: AnchorManager = None
-
-    def start_anchor_editing(self, canvas):
-        self.anchor_manager = AnchorManager(canvas, self.pages_iterator.get_or_raise())
-        self.anchor_manager.draw_all()
-
-    def stop_anchor_editing(self):
-        if self.anchor_manager is None:
-            return
-
-        self.anchor_manager.save_page_points()
-        self.anchor_manager.delete_all_canvas_objects()
-        self.anchor_manager = None
-
-    def is_started_anchor_editing(self):
-        return self.anchor_manager is not None
 
     def get_page(self) -> Page:
         return self.pages_iterator.get_or_raise()
 
-    def finish_anchor_editing(self):
-        if self.anchor_manager is not None:
-            self.anchor_manager.save_page_points()
-            self.anchor_manager = None
-
     def next_page(self):
-        self.finish_anchor_editing()
         self.pages_iterator.next()
 
     def previous_page(self):
-        self.finish_anchor_editing()
         self.pages_iterator.prev()
 
     def delete_current_page(self):
@@ -90,7 +67,3 @@ class PageManager:
     def create_empty_page(self):
         self.pages_iterator.append(Page.empty())
         return self.pages_iterator.get_or_raise()
-
-    def get_anchor_indices(self):
-        if self.is_started_anchor_editing():
-            return self.anchor_manager.get_current_indices()

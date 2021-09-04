@@ -10,6 +10,7 @@ from handwriting.misc.exceptions import ObjectNotFound, SavingException, Loading
 from handwriting.page_writing.page_transform_grid import PageTransformGrid
 
 
+# TODO bind AnchorManager to each page
 class Page:
     """
     class contains initial image_initial and image_initial with text of types ImageTk.PhotoImage

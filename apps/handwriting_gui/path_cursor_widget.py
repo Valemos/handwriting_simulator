@@ -6,7 +6,7 @@ from handwriting.path.path_drawer import PathDrawer
 from handwriting.paths_dictionary.dictionary_manager import DictionaryManager
 
 
-class PathSelectorWidget(tk.Frame):
+class PathCursorWidget(tk.Frame):
     def __init__(self, root, grid_width, path_drawer: PathDrawer):
         super().__init__(self, root)
         self.parent = root
