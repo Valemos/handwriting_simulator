@@ -32,29 +32,6 @@ def draw_rect(borders, draw, accent_color=(255, 100, 100), draw_w=2):
     draw.line([left, top, right, top, right, bottom, left, bottom, left, top], fill=accent_color, width=draw_w)
 
 
-def calc_path_rect(path, shift=None):
-    points = path.get_variant_or_raise(shift)
-
-    not_br = 0
-    while points[not_br] == path.break_point: not_br += 1
-
-    left, top, right, bottom = points[not_br][0], points[not_br][1], points[not_br][0], points[not_br][1]
-
-    for p in points:
-        if p != path.break_point:
-            if p[0] > right:
-                right = p[0]
-            elif p[0] < left:
-                left = p[0]
-
-            if p[1] > bottom:
-                bottom = p[1]
-            elif p[1] < top:
-                top = p[1]
-
-    return (left, top, right, bottom)
-
-
 def get_path_img(path, draw_obj=None, draw_color=(0, 0, 0), draw_w=4, img_size=None):
     im = None
 
@@ -71,17 +48,6 @@ def get_path_img(path, draw_obj=None, draw_color=(0, 0, 0), draw_w=4, img_size=N
     return im
 
 
-def shift_path_rect(path, shift_p, inplace=True):
-    new_path = path if inplace else path.copy()
-    rect = calc_path_rect(new_path)
-    shift = (shift_p[0] - rect[0], shift_p[1] - rect[1])
-    new_path.shifts[0] = (new_path.shifts[0][0] + shift[0], new_path.shifts[0][1] + shift[1])
-    for i in range(len(path.shifts)):
-        if new_path.points[i] != new_path.break_point:
-            new_path.points[i] = (new_path.points[i][0] + shift[0], new_path.points[i][1] + shift[1])
-    return new_path
-
-
 def premodify_letters(dct, scale_factor):
     for char, paths_set in dct.items():
 
@@ -90,9 +56,8 @@ def premodify_letters(dct, scale_factor):
                 continue
 
             first_p, last_p = path.shifts[0], path.shifts[-2]
-            rotation = np.arctan((first_p[1] - last_p[1]) / (first_p[0] - last_p[0]));
+            rotation = np.arctan((first_p[1] - last_p[1]) / (first_p[0] - last_p[0]))
             transform_path(path, rotation, (scale_factor, scale_factor))
-            shift_path_rect(path, (0, 0))
 
     return dct
 

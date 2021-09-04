@@ -24,7 +24,7 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
                                   "or press \"Space\" on keyboard"
 
     def __init__(self, root):
-        tk.Frame.__init__(self, root)
+        super().__init__(self, root)
         self.parent = root
         self.parent.title("Handwriting manager")
 
@@ -38,10 +38,9 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
         display = CanvasDisplay(self.canvas)
         self.path_drawer = PathDrawer(self.dictionary_manager, display)
 
-        shift_frame = tk.Frame(root)
-        label_shift = tk.Label(shift_frame, text="Base shift: ")
-        self.point_entry = PointEntry(shift_frame, grid_width)
+        self.point_entry = PointEntry(root, grid_width)
         self.point_entry.set(Point(100, 100))
+
         self.path_drawer.set_global_shift(self.point_entry.get_point())
 
         self.path_selector = PathSelectorWidget(root, grid_width, self.path_drawer)
@@ -59,11 +58,13 @@ class HandwritingShiftModifier(tk.Frame, EventBindManager):
                                                         self.dictionary_manager,
                                                         self.path_selector.update_menus)
 
-        shift_frame.pack(side="top")
-        self.dictionary_opener.pack(side="top")
-        self.path_selector.pack(side="top")
-        self.dictionary_editor.pack(side="top")
-        self.canvas.pack(side="top")
+        put_objects_on_grid([
+            [tk.Label(root, text="Base shift: "), self.point_entry],
+            [self.dictionary_opener],
+            [self.path_selector],
+            [self.dictionary_editor],
+            [self.canvas],
+        ])
 
         self.bind_handlers(self.create_events_dict())
 

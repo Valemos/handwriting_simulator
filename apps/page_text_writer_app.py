@@ -33,7 +33,7 @@ class PageTextWriterApp(tk.Frame,
     default_pages_directory = Path("../pages")
 
     def __init__(self, root):
-        tk.Frame.__init__(self, root)
+        super().__init__(self, root)
         self.root = root
 
         self.dictionary_manager = DictionaryManager()
@@ -202,16 +202,6 @@ class PageTextWriterApp(tk.Frame,
             self.canvas.delete(obj)
 
         self.points_draw_objects = []
-
-    def handle_update_dict_path(self, event=None):
-        self.open_dictionary(self.entry_dict_path.get())
-
-    def open_dictionary(self, path: str):
-        self.root.focus()
-
-        correct_path = self.dictionary_manager
-        edited_path = self.dictionary_manager.read_file(path)
-        self.entry_dict_path.set(str(edited_path))
 
     def get_pages_directory(self, directory_str: str = None):
         if directory_str is not None:

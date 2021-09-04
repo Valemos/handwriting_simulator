@@ -5,6 +5,7 @@ def put_objects_on_grid(grid_rows, shared_args=None):
     :param grid_rows: rows with canvas_objects to place inside their parent
     :param shared_args: additional global arguments that will be applied to every grid entry
     """
+
     for row in range(len(grid_rows)):
         for col in range(len(grid_rows[row])):
             if grid_rows[row][col] is None:

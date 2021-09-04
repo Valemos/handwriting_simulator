@@ -8,7 +8,7 @@ from handwriting.paths_dictionary.dictionary_manager import DictionaryManager
 
 class PathSelectorWidget(tk.Frame):
     def __init__(self, root, grid_width, path_drawer: PathDrawer):
-        tk.Frame.__init__(self, root)
+        super().__init__(self, root)
         self.parent = root
         self.path_drawer = path_drawer
         self.dictionary_manager = path_drawer.dictionary_manager

@@ -14,7 +14,7 @@ class DictionaryOpenerWidget(tk.Frame):
                  path_drawer: PathDrawer,
                  dictionary_manager: DictionaryManager,
                  update_menus_callback):
-        tk.Frame.__init__(self, root)
+        super().__init__(self, root)
         self.parent = root
         self.path_drawer = path_drawer
         self.dictionary_manager = dictionary_manager
