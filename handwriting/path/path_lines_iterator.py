@@ -1,10 +1,9 @@
-from collections import Iterator
-
-from handwriting.path.curve.lines_iterator import LinesIterator
+from handwriting.misc.i_lines_iterator import ILinesIterator
 from handwriting.misc.updateable_iterator import UpdatableIterator
+from handwriting.path.curve.lines_iterator import LinesIterator
 
 
-class PathLinesIterator(Iterator):
+class PathLinesIterator(ILinesIterator):
     """
     this class returns pairs of points to properly draw lines on canvas
     """
@@ -17,25 +16,25 @@ class PathLinesIterator(Iterator):
 
         self.lines_iterator: LinesIterator = None
         if len(self.curves_iterator) > 0:
-            self.iterate_next_curve(shift)
+            self._iterate_next_curve(shift)
 
     def __next__(self):
         if self.lines_iterator is None:
-            self.iterate_next_curve()
+            self._iterate_next_curve()
 
-        self.points = self.lines_iterator.next()
+        self.points = next(self.lines_iterator)
 
         if self.lines_iterator.is_finished():
             self.lines_iterator.set_finished(False)  # enables iterating when new points are added
-            self.iterate_next_curve(self.points[1])
+            self._iterate_next_curve(self.points[1])
             self.__next__()
 
         return self.points
 
-    def iterate_next_curve(self, shift=None):
+    def _iterate_next_curve(self, shift=None):
         self.lines_iterator = next(self.curves_iterator).get_lines(shift)
 
-    def new_curve(self, point):
+    def _new_curve(self, point):
         """
         point must be absolute value as needed to be returned by this iterator later
         """

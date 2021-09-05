@@ -1,36 +1,37 @@
 from pathlib import Path
 
+from handwriting.misc.exceptions import ObjectNotFound
 from handwriting.page_writing.anchor_manager import AnchorManager
 from handwriting.misc.cyclic_iterator import CyclicIterator
 from handwriting.page_writing.page import Page
 
 
-class PagesIterator:
+class PageIterator:
     """
     class allows to store pages and iterate through them
-
-    Also this class supplies interface to interact with page lines anchor points
     """
 
     def __init__(self):
-        self.pages = []
-        self.pages_iterator = CyclicIterator(self.pages)
+        self.pages = CyclicIterator([])
 
     def get_page(self) -> Page:
-        return self.pages_iterator.get_or_raise()
+        try:
+            return self.pages.get_or_raise()
+        except ObjectNotFound:
+            return self.create_empty_page()
 
     def next_page(self):
-        self.pages_iterator.next()
+        self.pages.next()
 
     def previous_page(self):
-        self.pages_iterator.prev()
+        self.pages.prev()
 
     def delete_current_page(self):
-        self.pages_iterator.remove_current()
-        self.pages_iterator.update_index()
+        self.pages.remove_current()
+        self.pages.update_index()
 
     def select_page(self, index):
-        self.pages_iterator.select(index)
+        self.pages.select(index)
 
     # read pages from files
     def read_pages_from_dir(self, directory_path: Path):
@@ -41,15 +42,15 @@ class PagesIterator:
         """
         # read all binary pages
         self.pages = Page.read_pages(directory_path)
-        prev_i = self.pages_iterator.index
-        self.pages_iterator = CyclicIterator(self.pages)
-        self.pages_iterator.select(prev_i)
+        prev_i = self.pages.index
+        self.pages = CyclicIterator(self.pages)
+        self.pages.select(prev_i)
 
-    def read_images_to_pages(self, search_directory: Path, glob_queries=None):
-        if glob_queries is None:
-            glob_queries = ["*.png", "*.jpg"]
+    def read_images_to_pages(self, search_directory: Path, image_patterns=None):
+        if image_patterns is None:
+            image_patterns = ["*.png", "*.jpg"]
 
-        for query in glob_queries:
+        for query in image_patterns:
             for path in search_directory.glob(query):
                 try:
                     new_page = Page.from_image(path)
@@ -57,13 +58,14 @@ class PagesIterator:
                 except Exception as exc:
                     print(f"cannot open file {str(exc)}")
 
-        prev_i = self.pages_iterator.index
-        self.pages_iterator = CyclicIterator(self.pages)
-        self.pages_iterator.select(prev_i)
+        prev_i = self.pages.index
+        self.pages = CyclicIterator(self.pages)
+        self.pages.select(prev_i)
 
     def page_exists(self):
-        return len(self.pages_iterator) > 0
+        return len(self.pages) > 0
 
     def create_empty_page(self):
-        self.pages_iterator.append(Page.empty())
-        return self.pages_iterator.get_or_raise()
+        page = Page.empty()
+        self.pages.append(page)
+        return page

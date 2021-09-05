@@ -21,7 +21,7 @@ class EntryIntegerWithLabel(EntryWithLabel):
         if not cls.str_is_int(field.get()):
             field.set(str(int('0' + ''.join(i for i in field.get() if i.isdigit()))))
 
-    def get(self):
+    def get(self) -> int:
         self.update_integer_field(self.str_variable)
         return int(self.str_variable.get())
 

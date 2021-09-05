@@ -31,17 +31,17 @@ class TestAnchorPoints(unittest.TestCase):
         self.app.mouse_position = Point(128, 128)
         self.app.handle_edit_page_points()
         self.assertEqual(self.app.mouse_position,
-                         self.app.page_manager.anchor_manager.get_current_point())
+                         self.app.page_iterator.anchor_manager.get_current_point())
 
     def test_draw_multiple_anchors(self):
-        self.app.page_manager.get_page().lines_points = [
+        self.app.page_iterator.get_page().lines_points = [
             [Point(100, 150), Point(120, 80), Point(116, 90)]
         ]
         self.app.handle_edit_page_points()
 
         self.app.mouse_position = Point(128, 128)
         self.assertEqual(self.app.mouse_position,
-                         self.app.page_manager.anchor_manager.get_current_point())
+                         self.app.page_iterator.anchor_manager.get_current_point())
 
     def tearDown(self):
         self.app_root.quit()

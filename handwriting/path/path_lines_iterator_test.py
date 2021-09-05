@@ -40,7 +40,7 @@ class TestPathLinesIterator(TestCase):
 
     def test_create_new_curve_from_iterator(self):
         self.get_lines(self.path_iter)
-        self.path_iter.new_curve(Point(50, 50))
+        self.path_iter._new_curve(Point(50, 50))
         self.path_iter.append_absolute(Point(55, 55))
         self.path_iter.append_absolute(Point(60, 80))
         self.path_iter.append_absolute(Point(65, 85))
@@ -57,7 +57,7 @@ class TestPathLinesIterator(TestCase):
 
         itr = path.get_lines()
 
-        itr.new_curve(Point(50, 50))
+        itr._new_curve(Point(50, 50))
         itr.append_absolute(Point(55, 55))
         itr.append_absolute(Point(60, 80))
         itr.append_absolute(Point(65, 85))

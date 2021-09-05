@@ -43,7 +43,7 @@ class CanvasDisplay:
     def draw_line(self, point1: Point, point2: Point):
         self._canvas.create_line(point1.x, point1.y, point2.x, point2.y, fill=self._brush_color, width=self._brush_size)
 
-    def get_cropped_image(self, image):
+    def get_resized_image(self, image):
         return PhotoImage(
             image.resize((
                 self._canvas.winfo_width(),

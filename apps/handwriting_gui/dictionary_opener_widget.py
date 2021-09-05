@@ -14,7 +14,7 @@ class DictionaryOpenerWidget(tk.Frame):
                  dictionary_manager: DictionaryManager,
                  dictionary_opened_callback=lambda: None,
                  update_menus_callback=lambda: None):
-        super().__init__(self, root)
+        tk.Frame.__init__(self, root)
         self.parent = root
         self.dictionary_manager = dictionary_manager
         self._dictionary_opened_callback = dictionary_opened_callback

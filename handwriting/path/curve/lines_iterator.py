@@ -1,7 +1,10 @@
+from typing import Tuple
+
+from handwriting.misc.i_lines_iterator import ILinesIterator
 from handwriting.path.curve.point import Point
 
 
-class LinesIterator:
+class LinesIterator(ILinesIterator):
 
     def __init__(self, parent, shift: Point = None):
         self.parent = parent
@@ -10,7 +13,7 @@ class LinesIterator:
         self.prev_point = None
         self._finished = False
 
-    def next(self):
+    def __next__(self) -> Tuple[Point, Point]:
         self.prev_point = self.cur_point
 
         try:

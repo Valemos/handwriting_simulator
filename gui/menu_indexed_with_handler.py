@@ -4,7 +4,7 @@ from gui.menu_with_handler import MenuWithHandler
 class MenuIndexedWithHandler(MenuWithHandler):
 
     def __init__(self, root, width, handler):
-        super().__init__(root, width, handler)
+        super().__init__(self, root, width, handler)
 
     @staticmethod
     def indexed_name(index, name):

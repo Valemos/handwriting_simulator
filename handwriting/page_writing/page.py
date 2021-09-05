@@ -3,6 +3,7 @@ from pickletools import optimize
 
 from math import sqrt
 from pathlib import Path
+from typing import List
 
 from PIL import Image
 from handwriting.misc.stream_serialization import *
@@ -31,8 +32,6 @@ class Page:
         # indicates to create new image on next request for image to draw
         self._image_initial = self.current_image = image
         self._image_text = None
-
-        self.page_transform = PageTransformGrid([[]])
 
     @classmethod
     def empty(cls, page_size=None):
@@ -65,10 +64,6 @@ class Page:
             try:
                 page_name_bytes = str(self.name).encode("utf-8")
                 write_length_object(fout, page_name_bytes)
-
-                grid_bytes = pickle.dumps(self.page_transform)
-                write_length_object(fout, optimize(grid_bytes), 4)
-
                 pickle.dump(self._image_initial, fout)
 
             except pickle.PicklingError:
@@ -81,20 +76,14 @@ class Page:
         with file_path.open("rb") as fin:
             try:
                 page_name = read_length_object(fin).decode("utf-8")
-                anchor_points = read_length_object(fin, 4)
-                anchor_points = pickle.loads(anchor_points)
                 image = pickle.load(fin)
                 new_obj = Page(image, page_name, file_path)
-                new_obj.lines_points = anchor_points
                 return new_obj
             except pickle.UnpicklingError:
                 raise LoadingException(f"cannot load page from file {str(file_path)}")
 
-    def add_line_anchor_point(self, line_index, point):
-        self.page_transform.add_anchor(point, line_index)
-
     @classmethod
-    def read_pages(cls, directory_path):
+    def read_pages(cls, directory_path) -> List:
         pages = []
         for page_file in directory_path.glob(f"*{Page.pages_data_suffix}"):
             try:
@@ -114,7 +103,7 @@ class Page:
     def reset_page(self):
         self._image_text = self._image_initial.copy()
 
-    def get_draw_image(self):
+    def get_drawable_image(self):
         if self._image_text is None:
             self.reset_page()
 

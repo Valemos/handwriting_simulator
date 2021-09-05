@@ -51,7 +51,7 @@ class PathDrawer:
             if path is not None:
                 self.path_lines_iterator = path.get_lines()
 
-        self.path_lines_iterator.new_curve(point)
+        self.path_lines_iterator._new_curve(point)
 
     def continue_curve(self, point_absolute):
         self.path_lines_iterator.append_absolute(point_absolute)

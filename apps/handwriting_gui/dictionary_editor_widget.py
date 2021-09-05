@@ -17,7 +17,7 @@ class DictionaryEditorWidget(tk.Frame):
                  dictionary_manager: DictionaryManager,
                  update_menus_callback,
                  redraw_path_callback):
-        super().__init__(self, root)
+        tk.Frame.__init__(self, root)
         self.parent = root
         self.dictionary_manager = dictionary_manager
         self._redraw_path_callback = redraw_path_callback

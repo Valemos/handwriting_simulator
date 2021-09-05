@@ -7,7 +7,7 @@ class MenuWithHandler(tk.OptionMenu):
 
     def __init__(self, root, width, handler):
         self.variable_menu = tk.StringVar(root)
-        super().__init__(root, self.variable_menu, value=None)
+        tk.OptionMenu.__init__(self, root, self.variable_menu, None)
         self.configure(width=width)
 
         if not callable(handler):

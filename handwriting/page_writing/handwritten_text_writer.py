@@ -1,6 +1,6 @@
 from handwriting.misc.exceptions import ObjectNotFound
 from handwriting.path.transform.dictionary_transformer import DictionaryTransformer
-from handwriting.paths_dictionary.path_collection import PathDrawableCollection
+from handwriting.paths_dictionary.path_collection import PathsCollection
 from handwriting.path.curve.curve import Curve
 from handwriting.path.handwritten_path import HandwrittenPath
 from handwriting.paths_dictionary.signature_dictionary import SignatureDictionary
@@ -10,16 +10,15 @@ from handwriting.path.transform.path_shift_box import PathShiftBox
 
 
 class PathTextWriter:
-    def __init__(self, page, dictionary, space_size=10):
-        self.page: Page = page
+    def __init__(self, dictionary, space_size=10):
         self.dictionary: SignatureDictionary = dictionary
         self.dict_transformer = DictionaryTransformer(dictionary)
 
         self.space_shift: Point = self.get_space_shift(space_size)
 
-    def write_text(self, text_input: str):
-        text_path = PathDrawableCollection()
-        borders_path = PathDrawableCollection()
+    def write_text(self, text_input: str) -> PathsCollection:
+        text_path = PathsCollection()
+        borders_path = PathsCollection()
 
         self.dict_transformer.scale(0.5, 0.5)
         transformed_dict = self.dict_transformer.get_result()

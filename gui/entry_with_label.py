@@ -4,10 +4,10 @@ import tkinter as tk
 class EntryWithLabel(tk.Frame):
 
     def __init__(self, root, label, width, label_width_ratio):
-        super().__init__(root)
+        tk.Frame.__init__(self, root)
 
-        label_obj = tk.Label(self, text=label,
-                             width=round(width * label_width_ratio))
+        # todo setup label to fit in gui
+        label_obj = tk.Label(self, text=label)
         self.str_variable = tk.StringVar(self)
         self.entry = tk.Entry(self, textvariable=self.str_variable,
                               width=round(width * (1 - label_width_ratio)))

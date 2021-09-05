@@ -5,7 +5,7 @@ from gui.button_state import ButtonState
 class ButtonTwoStates(tk.Frame):
 
     def __init__(self, root, width, state_on, state_off):
-        super().__init__(root)
+        tk.Frame.__init__(self, root)
 
         self.state_on: ButtonState = state_on
         self.state_off: ButtonState = state_off

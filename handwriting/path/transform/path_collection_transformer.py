@@ -1,11 +1,11 @@
-from handwriting.paths_dictionary.path_collection import PathDrawableCollection
+from handwriting.paths_dictionary.path_collection import PathsCollection
 from handwriting.path.transform.i_path_transformer import IPathTransformer
 from handwriting.path.transform.path_transformer import PathTransformer
 
 
 class PathCollectionTransformer(IPathTransformer):
 
-    def __init__(self, collection: PathDrawableCollection, inplace=False):
+    def __init__(self, collection: PathsCollection, inplace=False):
         super().__init__(collection, inplace)
         self.collection = collection
 
