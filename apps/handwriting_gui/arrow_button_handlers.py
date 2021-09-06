@@ -1,19 +1,19 @@
-from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
+from handwriting.page_writing.button_handler_group import ArrowButtonsHandler
 
 
 class ArrowButtonHandlers:
 
     def __init__(self):
-        self.arrow_handlers: ButtonHandlerGroup = None
+        self.arrows_handler: ArrowButtonsHandler = None
 
     def handle_button_left(self, event=None):
-        self.arrow_handlers.left(self)
+        self.arrows_handler.left(self)
 
     def handle_button_right(self, event=None):
-        self.arrow_handlers.right(self)
+        self.arrows_handler.right(self)
 
     def handle_button_up(self, event=None):
-        self.arrow_handlers.up(self)
+        self.arrows_handler.up(self)
 
     def handle_button_down(self, event=None):
-        self.arrow_handlers.down(self)
+        self.arrows_handler.down(self)

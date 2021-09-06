@@ -1,21 +1,17 @@
-class ButtonHandlerGroup:
+class ArrowButtonsHandler:
     """
     This class contains interface to multiple button handlers
     Allows to change handlers class to perform another group of tasks
     """
 
-    @staticmethod
-    def left(app):
+    def left(self):
         raise NotImplementedError
 
-    @staticmethod
-    def right(app):
+    def right(self):
         raise NotImplementedError
 
-    @staticmethod
-    def up(app):
+    def up(self):
         raise NotImplementedError
 
-    @staticmethod
-    def down(app):
+    def down(self):
         raise NotImplementedError

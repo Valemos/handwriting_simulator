@@ -10,7 +10,7 @@ from handwriting.path.transform.path_shift_box import PathShiftBox
 
 
 class PathTextWriter:
-    def __init__(self, dictionary, space_size=10):
+    def __init__(self, dictionary, line_height, space_size=10):
         self.dictionary: SignatureDictionary = dictionary
         self.dict_transformer = DictionaryTransformer(dictionary)
 
@@ -24,6 +24,7 @@ class PathTextWriter:
         transformed_dict = self.dict_transformer.get_result()
 
         letter_size: list = transformed_dict.get_max_letter_size()
+        cur_write_position = self.get_letter_position(0, )
 
         for letter_index, char in enumerate(text_input):
             char_variants = transformed_dict[char]
@@ -34,7 +35,8 @@ class PathTextWriter:
                 char_path = self.get_special_character_path(char)
 
             if char_path is not None:
-                boxed_path = PathShiftBox(char_path, letter_size)
+                boxed_path = PathShiftBox(char_path)
+                boxed_path.extend_height(letter_size[1])
                 boxed_path.set_position(self.get_letter_position(letter_index, letter_size))
                 text_path.append(boxed_path)
                 borders_path.append(boxed_path.get_border_path())

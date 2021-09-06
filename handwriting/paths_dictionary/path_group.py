@@ -22,7 +22,7 @@ class PathGroup(ICollection, IStreamSavable):
     def __str__(self):
         return f"{self.name}: {len(self.components)}"
 
-    def get_iterator(self):
+    def get_paths_iterator(self):
         return CyclicIterator(self.components)
 
     def initialize_save_path(self, save_file=None):

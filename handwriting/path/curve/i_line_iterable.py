@@ -1,15 +1,11 @@
-from abc import ABC, abstractmethod
-from collections import Iterator
+from abc import abstractmethod, ABCMeta
 
+from handwriting.misc.i_lines_iterator import ILinesIterator
 from handwriting.path.curve.point import Point
 
 
-class ILineIterable(ABC):
+class ILinesIterable(metaclass=ABCMeta):
 
     @abstractmethod
-    def get_iterator(self, shift: Point = None) -> Iterator:
-        pass
-
-    @abstractmethod
-    def get_lines(self, shift: Point = None):
+    def get_lines(self, shift: Point = None) -> ILinesIterator:
         pass

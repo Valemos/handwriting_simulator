@@ -1,9 +1,10 @@
 from collections import Iterator
 
 from handwriting.misc.updateable_iterator import UpdatableIterator
+from handwriting.path.curve.point import Point
 
 
-class CurveIterator(Iterator):
+class CurvePointsIterator(Iterator):
     """
     This class iterates through shifts in Curve
     and returns absolute values of points relative to initial shift
@@ -17,7 +18,7 @@ class CurveIterator(Iterator):
     def __len__(self):
         return len(self.parent)
 
-    def __next__(self):
+    def __next__(self) -> Point:
         """
         Each iteration shifts previous point by next value from Curve shifts
         """

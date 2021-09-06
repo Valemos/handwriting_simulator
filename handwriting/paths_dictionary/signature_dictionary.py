@@ -1,10 +1,11 @@
 from pathlib import Path
+from typing import List, Dict
 
+from handwriting.misc.cyclic_iterator import CyclicIterator
 from handwriting.misc.exceptions import ObjectNotFound, LoadingException
-from handwriting.path.curve.point import Point
+from handwriting.path.transform.path_shift_box import PathShiftBox
 from handwriting.paths_dictionary.path_group import PathGroup
 from handwriting.paths_dictionary.signature_dictionary_iterator import SignatureDictionaryIterator
-from handwriting.path.transform.path_shift_box import PathShiftBox
 
 
 class SignatureDictionary:
@@ -18,7 +19,7 @@ class SignatureDictionary:
     dictionary_suffix = '.dict'
     default_path = Path('signature').with_suffix(dictionary_suffix)
 
-    def __init__(self, name='', groups: list = None):
+    def __init__(self, name='', groups = None):
         """
         We transform path groups list to internal dict_manager
         to enable access by indexing
@@ -28,8 +29,8 @@ class SignatureDictionary:
         self.name = name
 
         # dict_manager holds indices of groups list
-        self.groups = groups if groups is not None else []
-        self.groups_dict = {group.name: group for group in self.groups}
+        self.groups: List[PathGroup] = groups if groups is not None else []
+        self.groups_dict: Dict[str, PathGroup] = {group.name: group for group in self.groups}
 
     def __len__(self):
         return len(self.groups)
@@ -56,7 +57,10 @@ class SignatureDictionary:
     def __iter__(self):
         return iter(self.groups)
 
-    def get_iterator(self):
+    def get_groups_iterator(self):
+        return CyclicIterator(self.groups)
+
+    def get_paths_iterator(self):
         """Returns bidirectional pages_iterator for path groups and their variants"""
         return SignatureDictionaryIterator(self)
 
@@ -147,10 +151,9 @@ class SignatureDictionary:
         max_size = [0, 0]
         for group in self.groups:
             for letter in group:
-                letter.set_position(Point(0, 0))
-                box = PathShiftBox.get_path_box(letter)
-                max_size[0] = PathShiftBox.get_box_dimension(box[0], box[1], desired=max_size[0])
-                max_size[1] = PathShiftBox.get_box_dimension(box[2], box[3], desired=max_size[1])
+                box = PathShiftBox.get_lines_box(letter)
+                max_size[0] = max(max_size[0], box.get_size_x())
+                max_size[1] = max(max_size[1], box.get_size_y())
 
         return max_size
 

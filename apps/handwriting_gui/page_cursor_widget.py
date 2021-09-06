@@ -3,10 +3,11 @@ from tkinter.simpledialog import askstring
 
 from gui import LeftRightButtons, MenuWithHandler
 from gui.canvas_display import CanvasDisplay
+from handwriting.page_writing.button_handler_group import ArrowButtonsHandler
 from handwriting.page_writing.page_iterator import PageIterator
 
 
-class PageCursorWidget(tk.Frame):
+class PageCursorWidget(tk.Frame, ArrowButtonsHandler):
     def __init__(self,
                  root,
                  grid_width,
@@ -83,3 +84,15 @@ class PageCursorWidget(tk.Frame):
     def update_menus(self):
         self.update_page_name()
         self.update_pages_menu()
+
+    def left(self):
+        self.handle_prev_page()
+
+    def right(self):
+        self.handle_next_page()
+
+    def up(self):
+        pass
+
+    def down(self):
+        pass

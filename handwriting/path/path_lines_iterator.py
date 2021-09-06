@@ -1,6 +1,6 @@
 from handwriting.misc.i_lines_iterator import ILinesIterator
 from handwriting.misc.updateable_iterator import UpdatableIterator
-from handwriting.path.curve.lines_iterator import LinesIterator
+from handwriting.path.curve.lines_iterator import CurveLinesIterator
 
 
 class PathLinesIterator(ILinesIterator):
@@ -14,7 +14,7 @@ class PathLinesIterator(ILinesIterator):
         self.curves_iterator = UpdatableIterator(self.path.components)
         self.points: tuple = None, None
 
-        self.lines_iterator: LinesIterator = None
+        self.lines_iterator: CurveLinesIterator = None
         if len(self.curves_iterator) > 0:
             self._iterate_next_curve(shift)
 

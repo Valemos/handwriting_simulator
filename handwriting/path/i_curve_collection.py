@@ -2,11 +2,11 @@ from abc import ABCMeta, abstractmethod
 from typing import List
 
 from handwriting.path.curve.curve import Curve
-from handwriting.path.curve.i_line_iterable import ILineIterable
+from handwriting.path.curve.i_line_iterable import ILinesIterable
 from handwriting.misc.i_positionable import IPositionable
 
 
-class ICurveCollection(ILineIterable, IPositionable, metaclass=ABCMeta):
+class ICurveCollection(ILinesIterable, IPositionable, metaclass=ABCMeta):
 
     @abstractmethod
     def get_curves(self) -> List[Curve]:

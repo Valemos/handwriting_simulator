@@ -10,7 +10,7 @@ class DictionaryManager:
 
     def __init__(self):
         self.dictionary: SignatureDictionary = SignatureDictionary()
-        self.iterator: SignatureDictionaryIterator = self.dictionary.get_iterator()
+        self.iterator: SignatureDictionaryIterator = self.dictionary.get_paths_iterator()
 
     @classmethod
     def get_or_create_path(cls, path_str):
@@ -45,7 +45,7 @@ class DictionaryManager:
 
     def read_file(self, file_path: Path):
         self.dictionary = SignatureDictionary.from_file(file_path)
-        self.iterator = self.dictionary.get_iterator()
+        self.iterator = self.dictionary.get_paths_iterator()
 
     def create_default(self):
         path = SignatureDictionary.default_path

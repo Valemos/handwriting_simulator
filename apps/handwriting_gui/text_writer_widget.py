@@ -16,7 +16,7 @@ class TextWriterWidget(tk.Frame):
         self.dictionary_manager = dictionary_manager
 
         btn_draw_text = tk.Button(self, text="Draw text", width=round(grid_width * 2 / 3),
-                                  command=self.handle_draw_text)
+                                  command=self.handle_write_text)
 
         btn_reset_page = tk.Button(self, text="Reset page", width=round(grid_width * 2 / 3),
                                    command=self.page_drawer.reset)
@@ -31,10 +31,14 @@ class TextWriterWidget(tk.Frame):
             [(self.entry_draw_text, {"columnspan": 3})],
         ])
 
-    def handle_draw_text(self, event=None):
+    def handle_write_text(self, event=None):
         text = self.entry_draw_text.get(1.0, tk.END)
 
-        text_drawer = PathTextWriter(self.dictionary_manager.dictionary, space_size=self.entry_space_sz.get())
+        page = self.page_drawer.get_current_page()
+        line_height = page.get_line_transform().get_line_height()
+        space_size = self.entry_space_sz.get()
+
+        text_drawer = PathTextWriter(self.dictionary_manager.dictionary, line_height, space_size)
         paths_collection = text_drawer.write_text(text)
 
         self.page_drawer.draw_lines(paths_collection.get_lines())

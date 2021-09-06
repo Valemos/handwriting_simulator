@@ -6,7 +6,7 @@ from gui.event_bind_manager import EventBindManager
 from gui.widget_positioning import put_objects_on_grid
 from handwriting.page_writing.anchor_points_handlers import AnchorPointHandlers
 from handwriting_gui.arrow_button_handlers import ArrowButtonHandlers
-from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
+from handwriting.page_writing.button_handler_group import ArrowButtonsHandler
 from handwriting.page_writing.page import Page
 from handwriting_gui.page_button_handlers import PageSwitchHandlers
 from handwriting.page_writing.page_drawer import PageDrawer
@@ -30,7 +30,6 @@ class PageTextWriterApp(tk.Frame,
 
         self.dictionary_manager = DictionaryManager()
         self.page_iterator = PageIterator()
-
 
         grid_width = 15
         self.ui_grid = tk.Frame(self)
@@ -60,7 +59,7 @@ class PageTextWriterApp(tk.Frame,
         self.setup_ui()
         self.page_cursor.update_menus()
 
-        self.arrow_handlers: ButtonHandlerGroup = None
+        self.arrows_handler: ArrowButtonsHandler = None
         self.select_page_switch_handlers()
 
     @staticmethod
@@ -72,10 +71,9 @@ class PageTextWriterApp(tk.Frame,
 
     def initialize(self):
         self.text_writer.entry_draw_text.insert(tk.END, "тестовая")
-        self.dictionary_opener.entry_dict_path.set(r"D:\coding\Python_codes\Handwriting_extractor_project\paths_format_transition\anton.dict")
+        self.dictionary_opener.entry_dict_path.set(r"/media/data/coding/Python_codes/Handwriting_extractor_project/paths_format_transition/anton.dict")
         self.dictionary_opener.open_from_entry_path()
-        # self.open_pages_directory(r"D:\coding\Python_codes\Handwriting_extractor_project\pages")
-        self.text_writer.handle_draw_text()
+        self.text_writer.handle_write_text()
         self.page_drawer.draw_current_page()
 
     def create_events_dict(self):
@@ -99,19 +97,16 @@ class PageTextWriterApp(tk.Frame,
 
     def setup_ui(self):
 
-        # arrange table
-        widgets_table_rows = [
+        # if argument not specified explicitly, take it from global arguments
+        global_arguments = {"padx": 4, "pady": 4, "sticky": tk.EW}
+
+        put_objects_on_grid(self.ui_grid, [
             [self.dictionary_opener],
             [self.page_opener],
             [self.page_cursor],
             # [self.anchor_editor],
             [self.text_writer],
-        ]
-
-        # if argument not specified explicitly, take it from global arguments
-        global_arguments = {"padx": 4, "pady": 4, "sticky": tk.EW}
-
-        put_objects_on_grid(self.ui_grid, widgets_table_rows, global_arguments)
+        ], global_arguments)
 
         self.rowconfigure(1)
         self.columnconfigure(2)
@@ -122,10 +117,10 @@ class PageTextWriterApp(tk.Frame,
         self.bind_handlers(self.create_events_dict())
 
     def select_page_switch_handlers(self):
-        self.arrow_handlers = PageSwitchHandlers
+        self.arrows_handler = self.page_cursor
 
     def select_anchor_point_handlers(self):
-        self.arrow_handlers = AnchorPointHandlers
+        self.arrows_handler = self.an
 
     def handle_canvas_enter(self, event=None):
         # TODO add anchors

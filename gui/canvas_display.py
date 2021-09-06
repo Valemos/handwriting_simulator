@@ -18,6 +18,9 @@ class CanvasDisplay:
         self._brush_color = "black"
         self._background_image = None
 
+    def get_canvas(self):
+        return self._canvas
+
     def reset(self):
         self._canvas.delete("all")
         if self._background_image is None:
@@ -51,3 +54,6 @@ class CanvasDisplay:
 
     def show_image(self, image):
         self._canvas.create_image((0, 0), anchor=tk.NW, image=image)
+
+    def delete(self, obj):
+        self._canvas.delete(obj)

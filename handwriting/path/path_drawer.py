@@ -23,7 +23,7 @@ class PathDrawer:
 
             # place path at (0, 0) and shift according to entered shift point
             current_path.set_position(Point(0, 0))
-            self.path_lines_iterator = current_path.get_iterator(self.shift_point)
+            self.path_lines_iterator = current_path.get_lines(self.shift_point)
             self.draw_lines_to_end(self.path_lines_iterator)
         except ObjectNotFound:
             pass

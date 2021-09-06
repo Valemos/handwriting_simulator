@@ -3,6 +3,7 @@ import io
 import unittest
 
 from handwriting.path.curve.curve import Curve
+from handwriting.path.curve.curve_iterator import CurvePointsIterator
 from handwriting.path.handwritten_path import HandwrittenPath
 from handwriting.path.curve.point import Point
 
@@ -60,10 +61,11 @@ class TestHandwrittenPath(unittest.TestCase):
         self.assertEqual(a, b)
 
     def test_curve_from_absolute_points(self):
-        curve = Curve.from_absolute(list(self.abs_points)).get_iterator()
-        list_iter = iter(self.abs_points)
+        curve = Curve.from_absolute(list(self.abs_points))
+        curve_iter = CurvePointsIterator(curve, curve.start)
+        abs_points_iter = iter(self.abs_points)
         while True:
             try:
-                self.assertEqual(next(curve), next(list_iter))
+                self.assertEqual(next(curve_iter), next(abs_points_iter))
             except StopIteration:
                 break

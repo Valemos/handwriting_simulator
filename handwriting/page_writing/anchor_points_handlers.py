@@ -1,7 +1,7 @@
-from handwriting.page_writing.button_handler_group import ButtonHandlerGroup
+from handwriting.page_writing.button_handler_group import ArrowButtonsHandler
 
 
-class AnchorPointHandlers(ButtonHandlerGroup):
+class AnchorPointHandlers(ArrowButtonsHandler):
 
     @staticmethod
     def left(app):

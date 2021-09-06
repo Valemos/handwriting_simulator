@@ -1,6 +1,7 @@
 from PIL import ImageDraw
 
 from handwriting.misc.i_lines_iterator import ILinesIterator
+from handwriting.page_writing.page import Page
 from handwriting.page_writing.page_iterator import PageIterator
 
 
@@ -9,6 +10,9 @@ class PageDrawer:
         self.page_iterator = page_iterator
         self.display = display
         self.current_page_image = None
+
+    def get_current_page(self) -> Page:
+        return self.page_iterator.get_page()
 
     def draw_current_page(self):
         self.display.reset()

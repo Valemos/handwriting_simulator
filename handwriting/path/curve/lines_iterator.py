@@ -4,11 +4,10 @@ from handwriting.misc.i_lines_iterator import ILinesIterator
 from handwriting.path.curve.point import Point
 
 
-class LinesIterator(ILinesIterator):
+class CurveLinesIterator(ILinesIterator):
 
-    def __init__(self, parent, shift: Point = None):
-        self.parent = parent
-        self.points_iterator = self.parent.get_iterator(shift)
+    def __init__(self, points_iterator):
+        self.points_iterator = points_iterator
         self.cur_point = self.points_iterator.cur_point
         self.prev_point = None
         self._finished = False

@@ -48,24 +48,6 @@ class TestTextWriter(unittest.TestCase):
                 self.fail("parent finished before child object")
             return
 
-    @unittest.skip("image show do not needed")
-    def test_show_image(self):
-        test_text = 'a b'
-
-        writer = PathTextWriter(self.page, self.dictionary)
-        text_path = writer.write_text(test_text)
-
-        image = Image.fromarray(np.full((20, 20), 255))
-        draw = ImageDraw.Draw(image)
-
-        it = text_path.get_iterator(Point(5, 5))
-        try:
-            while True:
-                p1, p2 = next(it)
-                draw.line((p1.x, p1.y, p2.x, p2.y), 0)
-        except StopIteration:
-            image.resize((100, 100)).show()
-
     @staticmethod
     def init_path_plus_5():
         return HandwrittenPath(curves=[Curve([Point(1, 0), Point(1, 0), Point(1, 0), Point(1, 0), Point(1, 0)])])
@@ -94,7 +76,7 @@ class TestTextWriter(unittest.TestCase):
         text_path_iter = iter(text_path)
 
         last_point = self.path_group_a[0].get_last_point()
-        b_iter = self.path_group_b[0].get_iterator(last_point)
+        b_iter = self.path_group_b[0].get_paths_iterator(last_point)
 
         self.check_iterator_continues_with_other(text_path_iter, iter(self.path_group_a[0]))
         self.check_iterator_continues_with_other(text_path_iter, b_iter)
@@ -111,7 +93,7 @@ class TestTextWriter(unittest.TestCase):
 
         self.check_iterator_continues_with_other(text_path_iter, iter(self.path_group_a[0]))
 
-        a_iter_shifted = self.path_group_a[0].get_iterator(last_point.shift(Point(5, 0)))
+        a_iter_shifted = self.path_group_a[0].get_lines(last_point.shift(Point(5, 0)))
         self.check_iterator_continues_with_other(text_path_iter, a_iter_shifted)
 
     def test_save_and_load_dictionary(self):

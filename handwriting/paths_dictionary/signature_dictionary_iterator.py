@@ -17,7 +17,7 @@ class SignatureDictionaryIterator:
 
     def update_variant(self):
         try:
-            self.variant_iter = self.group_iter.get_or_raise().get_iterator()
+            self.variant_iter = self.group_iter.get_or_raise().get_paths_iterator()
         except ObjectNotFound:
             self.variant_iter = EmptyCyclicIterator()
 

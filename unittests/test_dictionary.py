@@ -13,7 +13,7 @@ class TestDictionary(unittest.TestCase):
     @patch("handwriting.signature_dictionary.SignatureDictionaryIterator.current")
     def test_dict_iterator(self, *mocks):
         obj = SignatureDictionary.from_file(Path('../paths_format_transition/anton_test.dict'))
-        it = obj.get_iterator()
+        it = obj.get_paths_iterator()
 
         for i in range(100):
             print(it.group_iter, it.variant_iter)

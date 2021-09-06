@@ -1,17 +1,15 @@
 import pickle
-from pickletools import optimize
-
 from math import sqrt
 from pathlib import Path
 from typing import List
 
 from PIL import Image
-from handwriting.misc.stream_serialization import *
+
 from handwriting.misc.exceptions import ObjectNotFound, SavingException, LoadingException
-from handwriting.page_writing.page_transform_grid import PageTransformGrid
+from handwriting.misc.stream_serialization import *
+from handwriting.page_writing.page_lines_transform import PageLinesTransform
 
 
-# TODO bind AnchorManager to each page
 class Page:
     """
     class contains initial image_initial and image_initial with text of types ImageTk.PhotoImage
@@ -32,6 +30,7 @@ class Page:
         # indicates to create new image on next request for image to draw
         self._image_initial = self.current_image = image
         self._image_text = None
+        self._page_lines_transform = PageLinesTransform()
 
     @classmethod
     def empty(cls, page_size=None):
@@ -108,3 +107,6 @@ class Page:
             self.reset_page()
 
         return self._image_text
+
+    def get_line_transform(self) -> PageLinesTransform:
+        return self._page_lines_transform

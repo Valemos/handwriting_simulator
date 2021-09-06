@@ -1,9 +1,11 @@
 from collections import Collection
 from dataclasses import dataclass
-from typing import Iterator, List
+from typing import Iterator, List, Tuple
 
+from handwriting.misc.i_lines_iterator import ILinesIterator
+from handwriting.misc.i_positionable import IPositionable
 from handwriting.path.curve.curve import Curve
-from handwriting.path.curve.i_line_iterable import ILineIterable
+from handwriting.path.curve.i_line_iterable import ILinesIterable
 from handwriting.path.curve.point import Point
 from handwriting.path.handwritten_path import HandwrittenPath
 from handwriting.path.i_curve_collection import ICurveCollection
@@ -16,8 +18,17 @@ class Box:
     min_y: float
     max_y: float
 
+    def get_size_x(self):
+        return self.max_x - self.min_x
 
-class PathShiftBox(ICurveCollection):
+    def get_size_y(self):
+        return self.max_y - self.min_y
+
+    def get_size(self):
+        return self.get_size_x(), self.get_size_y()
+
+
+class PathShiftBox(ICurveCollection, IPositionable):
     """
     wrapper around Handwritten path or Curve
     to shift it according to it's borders
@@ -25,7 +36,7 @@ class PathShiftBox(ICurveCollection):
     if box_size is smaller than
     """
 
-    def __init__(self, path: ICurveCollection, box_size=None):
+    def __init__(self, path: ICurveCollection):
         """
         Parameters
         ----------
@@ -35,17 +46,15 @@ class PathShiftBox(ICurveCollection):
         self.box_position: Point = Point(0, 0)
         self.path = path
 
-        self.box, self.box_size = self.get_box_parameters(self.path, box_size)
-        self.rectangle_shift: Point = self.get_rectangle_shift(self.box, self.box_size)
+        self.box = self.get_lines_box(self.path.get_lines())
+        self.box_size = self.box.get_size()
+        self.rectangle_shift: Point = self.get_rectangle_shift(self.box)
 
     def set_position(self, point):
         self.box_position = point
 
     def get_position(self):
         return self.box_position
-
-    def get_iterator(self, shift: Point = None) -> Iterator:
-        return self.path.get_iterator(self.get_iterator_shift(shift))
 
     def get_lines(self, shift: Point = None):
         return self.path.get_lines(self.get_iterator_shift(shift))
@@ -60,18 +69,16 @@ class PathShiftBox(ICurveCollection):
         return self.path.get_curves()
 
     @staticmethod
-    def get_path_box(path: ICurveCollection, position=None) -> Box:
-        """Returns list of 4 values with path borders in order: left right top bottom"""
+    def get_lines_box(lines_iterator: ILinesIterator) -> Box:
 
-        if path.points_count() < 2:
-            # path iterator will not return any pair of points
+        try:
+            point1, point2 = next(lines_iterator)
+        except StopIteration:
             return Box(0, 0, 0, 0)
 
-        path_iter = path.get_iterator(position)
-        point1, point2 = next(path_iter)
         box = Box(min_x=point1.x, max_x=point1.x, min_y=point1.y, max_y=point1.y)
 
-        for point1, point2 in path_iter:
+        for point1, point2 in lines_iterator:
             box.min_x = min(box.min_x, point1.x, point2.x)
             box.max_x = max(box.max_x, point1.x, point2.x)
 
@@ -81,7 +88,7 @@ class PathShiftBox(ICurveCollection):
         return box
 
     @classmethod
-    def get_rectangle_shift(cls, box: Box, size) -> Point:
+    def get_rectangle_shift(cls, box: Box) -> Point:
         """
         Rectangle will be aligned to bottom left corner
         top left corner is (0, 0)
@@ -93,7 +100,7 @@ class PathShiftBox(ICurveCollection):
         # displacement from start to left border
         shift.x -= box.min_x
         # desired box height minus displacement down from beginning
-        shift.y += size[1] - box.max_y
+        shift.y += box.get_size_y() - box.max_y
 
         return shift
 
@@ -114,20 +121,8 @@ class PathShiftBox(ICurveCollection):
 
         return path
 
-    def get_box_parameters(self, path, desired_size):
-        if not isinstance(desired_size, Collection) or len(desired_size) != 2:
-            raise ValueError("box size must be a tuple of size 2 (width, height)")
+    def extend_height(self, new_height):
+        """shift path down to match desired box height"""
+        if new_height < self.box_size[1]:
+            raise ValueError("new height was less than original height")
 
-        box = self.get_path_box(path)
-        return box, (
-            self.get_box_dimension(box[0], box[1], desired_size[0]),  # width
-            self.get_box_dimension(box[2], box[3], desired_size[1])  # height
-        )
-
-    @staticmethod
-    def get_box_dimension(border_start, border_end, desired=None):
-        border_size = border_end - border_start
-        if desired is None:
-            return border_size
-
-        return max(desired, border_size)

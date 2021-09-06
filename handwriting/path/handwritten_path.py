@@ -1,7 +1,7 @@
 from typing import Iterator
 
 from handwriting.path.curve.curve import Curve
-from handwriting.path.curve.i_line_iterable import ILineIterable
+from handwriting.path.curve.i_line_iterable import ILinesIterable
 from handwriting.path.curve.point import Point
 from handwriting.path.i_curve_collection import ICurveCollection
 from handwriting.path.path_lines_iterator import PathLinesIterator
@@ -21,9 +21,6 @@ class HandwrittenPath(ICollection, ICurveCollection, IStreamSavable):
 
     def __iter__(self):
         return PathLinesIterator(self)
-
-    def get_iterator(self, shift: Point = None) -> Iterator:
-        return self.get_lines(shift)
 
     def get_lines(self, shift: Point = None) -> PathLinesIterator:
         return PathLinesIterator(self, shift)
@@ -75,7 +72,7 @@ class HandwrittenPath(ICollection, ICurveCollection, IStreamSavable):
             last_point = curve.get_last_point(last_point)
         return last_point
 
-    def append(self, path: ILineIterable):
+    def append(self, path: ILinesIterable):
         self.components.append(path)
 
     @staticmethod

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from handwriting.misc.exceptions import ObjectNotFound
-from handwriting.page_writing.anchor_manager import AnchorManager
+from handwriting.page_writing.point_collection_redactor import PointCollectionRedactor
 from handwriting.misc.cyclic_iterator import CyclicIterator
 from handwriting.page_writing.page import Page
 
