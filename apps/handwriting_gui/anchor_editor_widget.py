@@ -35,6 +35,8 @@ class AnchorEditorWidget(tk.Frame):
                                           command=self.handle_create_more_lines)
         self.btn_create_lines.config(state=tk.DISABLED)
 
+    # todo finish anchor editor
+
     def enable_edit_anchor_points(self):
         self.btn_create_lines.config(state=tk.NORMAL)
         self.select_anchor_point_handlers()

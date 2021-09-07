@@ -9,7 +9,7 @@ class DictionaryTransformer(IPathTransformer):
         super().__init__(dictionary, inplace)
 
     def scale(self, x_scale=1, y_scale=1):
-        if self.transform_invalid(self.scale, x_scale, y_scale):
+        if self.transform_if_not_repeated(self.scale, x_scale, y_scale):
             return
 
         if x_scale == 1 and y_scale == 1:

@@ -11,7 +11,7 @@ class PathTransformer(IPathTransformer):
         super().__init__(path, inplace)
 
     def scale(self, x_scale=1, y_scale=1):
-        if self.transform_invalid(self.scale, x_scale, y_scale):
+        if self.transform_if_not_repeated(self.scale, x_scale, y_scale):
             return
 
         # default values does not requires

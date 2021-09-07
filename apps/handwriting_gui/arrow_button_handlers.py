@@ -7,13 +7,13 @@ class ArrowButtonHandlers:
         self.arrows_handler: ArrowButtonsHandler = None
 
     def handle_button_left(self, event=None):
-        self.arrows_handler.left(self)
+        self.arrows_handler.left()
 
     def handle_button_right(self, event=None):
-        self.arrows_handler.right(self)
+        self.arrows_handler.right()
 
     def handle_button_up(self, event=None):
-        self.arrows_handler.up(self)
+        self.arrows_handler.up()
 
     def handle_button_down(self, event=None):
-        self.arrows_handler.down(self)
+        self.arrows_handler.down()

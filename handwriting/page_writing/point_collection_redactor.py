@@ -76,21 +76,13 @@ class PointCollectionRedactor:
     def redraw_current_point_black(self):
         self.redraw_point(self.get_current_point())
 
-    def move_up(self):
+    def move_left(self):
         self.redraw_current_point_black()
         self.points_iterator.prev()
 
-    def move_down(self):
-        self.redraw_current_point_black()
-        self.points_iterator.next()
-
-    def move_left(self):
-        self.redraw_current_point_black()
-        self.points_iterator.get_or_raise().prev()
-
     def move_right(self):
         self.redraw_current_point_black()
-        self.points_iterator.get_or_raise().next()
+        self.points_iterator.next()
 
     def update_current(self, point: Point):
         self.delete_current_canvas_objects()

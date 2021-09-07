@@ -99,12 +99,12 @@ class Page:
     def show_text(self):
         self.current_image = self._image_text
 
-    def reset_page(self):
+    def init_page(self):
         self._image_text = self._image_initial.copy()
 
     def get_drawable_image(self):
         if self._image_text is None:
-            self.reset_page()
+            self.init_page()
 
         return self._image_text
 

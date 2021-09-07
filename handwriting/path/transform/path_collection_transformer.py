@@ -10,7 +10,7 @@ class PathCollectionTransformer(IPathTransformer):
         self.collection = collection
 
     def scale(self, x_scale=1, y_scale=1):
-        if self.transform_invalid(self.scale, x_scale, y_scale):
+        if self.transform_if_not_repeated(self.scale, x_scale, y_scale):
             return
 
         for path in self.transformed:

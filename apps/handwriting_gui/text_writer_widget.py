@@ -9,11 +9,17 @@ from handwriting.paths_dictionary.dictionary_manager import DictionaryManager
 
 
 class TextWriterWidget(tk.Frame):
-    def __init__(self, root, grid_width, page_drawer: PageDrawer, dictionary_manager: DictionaryManager):
+    def __init__(self,
+                 root,
+                 grid_width,
+                 page_drawer: PageDrawer,
+                 dictionary_manager: DictionaryManager,
+                 callback_page_updated):
         tk.Frame.__init__(self, root)
         self.parent = root
         self.page_drawer = page_drawer
         self.dictionary_manager = dictionary_manager
+        self._callback_page_updated = callback_page_updated
 
         btn_draw_text = tk.Button(self, text="Draw text", width=round(grid_width * 2 / 3),
                                   command=self.handle_write_text)
@@ -35,6 +41,7 @@ class TextWriterWidget(tk.Frame):
         text = self.entry_draw_text.get(1.0, tk.END)
 
         page = self.page_drawer.get_current_page()
+        page.reset()
         line_height = page.get_line_transform().get_line_height()
         space_size = self.entry_space_sz.get()
 
@@ -42,3 +49,4 @@ class TextWriterWidget(tk.Frame):
         paths_collection = text_drawer.write_text(text)
 
         self.page_drawer.draw_lines(paths_collection.get_lines())
+        self._callback_page_updated()

@@ -24,7 +24,7 @@ class IPathTransformer(metaclass=ABCMeta):
 
         return previous_params == params
 
-    def transform_invalid(self, function, *params):
+    def transform_if_not_repeated(self, function, *params):
         """if transform is valid, initializes new transformed object"""
         if self.is_repeated_transform(function, *params):
             return True

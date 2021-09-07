@@ -1,4 +1,5 @@
 import tkinter as tk
+from pathlib import Path
 
 from gui import EntryWithLabel
 from handwriting.misc.exceptions import SavingException
@@ -56,8 +57,8 @@ class PageOpenerWidget(tk.Frame):
         self.page_iterator.pages = []
         self.page_iterator.read_pages_from_dir(file_path)
 
-    def get_pages_directory(self):
-        directory = self.entry_pages_dir.get()
+    def get_pages_directory(self) -> Path:
+        directory = Path(self.entry_pages_dir.get())
         # TODO write proper directory check and creation
         return directory
 

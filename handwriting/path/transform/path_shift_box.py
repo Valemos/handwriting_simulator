@@ -50,27 +50,24 @@ class PathShiftBox(ICurveCollection, IPositionable):
         self.box_size = self.box.get_size()
         self.rectangle_shift: Point = self.get_rectangle_shift(self.box)
 
-    def set_position(self, point):
-        self.box_position = point
+    def set_position(self, point: Point):
+        """Box is positioned relative to bottom left corner"""
+        self.box_position = point.copy()
 
     def get_position(self):
         return self.box_position
 
     def get_lines(self, shift: Point = None):
-        return self.path.get_lines(self.get_iterator_shift(shift))
+        return self.path.get_lines(self.box_position.shift(self.get_start_shift(shift)))
 
-    def get_iterator_shift(self, position):
-        if position is None:
-            return self.rectangle_shift
-        else:
-            return position.shift(self.rectangle_shift)
+    def get_start_shift(self, position):
+        return position.shift(self.rectangle_shift) if position is not None else self.rectangle_shift
 
     def get_curves(self) -> List[Curve]:
         return self.path.get_curves()
 
     @staticmethod
     def get_lines_box(lines_iterator: ILinesIterator) -> Box:
-
         try:
             point1, point2 = next(lines_iterator)
         except StopIteration:
@@ -123,6 +120,10 @@ class PathShiftBox(ICurveCollection, IPositionable):
 
     def extend_height(self, new_height):
         """shift path down to match desired box height"""
-        if new_height < self.box_size[1]:
+        if new_height < self.box.get_size_y():
             raise ValueError("new height was less than original height")
 
+        # edit top border of box (axis y is inverted)
+        self.box.min_y -= new_height - self.box.get_size_y()
+        self.rectangle_shift: Point = self.get_rectangle_shift(self.box)
+        self.box_size = self.box.get_size()

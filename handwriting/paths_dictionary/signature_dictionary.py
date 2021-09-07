@@ -151,7 +151,7 @@ class SignatureDictionary:
         max_size = [0, 0]
         for group in self.groups:
             for letter in group:
-                box = PathShiftBox.get_lines_box(letter)
+                box = PathShiftBox.get_lines_box(letter.get_lines())
                 max_size[0] = max(max_size[0], box.get_size_x())
                 max_size[1] = max(max_size[1], box.get_size_y())
 

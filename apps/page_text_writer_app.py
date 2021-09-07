@@ -4,14 +4,12 @@ from pathlib import Path
 from gui.canvas_display import CanvasDisplay
 from gui.event_bind_manager import EventBindManager
 from gui.widget_positioning import put_objects_on_grid
-from handwriting.page_writing.anchor_points_handlers import AnchorPointHandlers
-from handwriting_gui.arrow_button_handlers import ArrowButtonHandlers
 from handwriting.page_writing.button_handler_group import ArrowButtonsHandler
 from handwriting.page_writing.page import Page
-from handwriting_gui.page_button_handlers import PageSwitchHandlers
 from handwriting.page_writing.page_drawer import PageDrawer
 from handwriting.page_writing.page_iterator import PageIterator
 from handwriting.paths_dictionary.dictionary_manager import DictionaryManager
+from handwriting_gui.arrow_button_handlers import ArrowButtonHandlers
 from handwriting_gui.dictionary_opener_widget import DictionaryOpenerWidget
 from handwriting_gui.page_cursor_widget import PageCursorWidget
 from handwriting_gui.page_opener_widget import PageOpenerWidget
@@ -53,13 +51,19 @@ class PageTextWriterApp(tk.Frame,
             self.page_iterator,
             self.page_drawer.draw_current_page)
 
-        self.text_writer = TextWriterWidget(self.ui_grid, grid_width, self.page_drawer, self.dictionary_manager)
+        self.text_writer = TextWriterWidget(
+            self.ui_grid,
+            grid_width,
+            self.page_drawer,
+            self.dictionary_manager,
+            self.page_drawer.draw_current_page)
+
         # self.anchor_editor = AnchorEditorWidget(self.ui_grid, grid_width)
 
         self.setup_ui()
         self.page_cursor.update_menus()
 
-        self.arrows_handler: ArrowButtonsHandler = None
+        self.arrows_handler: ArrowButtonsHandler = self.page_cursor
         self.select_page_switch_handlers()
 
     @staticmethod
@@ -74,7 +78,6 @@ class PageTextWriterApp(tk.Frame,
         self.dictionary_opener.entry_dict_path.set(r"/media/data/coding/Python_codes/Handwriting_extractor_project/paths_format_transition/anton.dict")
         self.dictionary_opener.open_from_entry_path()
         self.text_writer.handle_write_text()
-        self.page_drawer.draw_current_page()
 
     def create_events_dict(self):
         return \
@@ -118,9 +121,6 @@ class PageTextWriterApp(tk.Frame,
 
     def select_page_switch_handlers(self):
         self.arrows_handler = self.page_cursor
-
-    def select_anchor_point_handlers(self):
-        self.arrows_handler = self.an
 
     def handle_canvas_enter(self, event=None):
         # TODO add anchors
